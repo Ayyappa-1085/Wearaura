@@ -17,13 +17,22 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-/* ================= CORS (FIXED) ================= */
+/* ================= CORS (PRODUCTION READY) ================= */
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173", // local frontend
-      "https://your-frontend.vercel.app", // 🔥 replace after deploy
-    ],
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "http://localhost:5173", // local frontend
+        process.env.CLIENT_URL, // deployed frontend
+      ];
+
+      // allow requests with no origin (like Postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
     credentials: true,
   })
 );
@@ -65,7 +74,7 @@ mongoose
     console.log("Mongo Error:", err);
   });
 
-/* ================= ERROR HANDLER (NEW) ================= */
+/* ================= ERROR HANDLER ================= */
 app.use((err, req, res, next) => {
   console.error("SERVER ERROR:", err);
 
