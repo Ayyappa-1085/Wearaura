@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import api from "../utils/api"; // 🔥 ADDED
 
 function Register() {
   const navigate = useNavigate();
@@ -67,24 +68,14 @@ function Register() {
     try {
       const normalizedEmail = email.toLowerCase().trim();
 
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email: normalizedEmail,
-          password,
-        }),
+      // 🔥 ONLY FIX
+      const res = await api.post("/api/auth/register", {
+        name,
+        email: normalizedEmail,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Register failed");
-        return;
-      }
+      const data = res.data;
 
       toast.success("Account created successfully");
 
@@ -92,8 +83,10 @@ function Register() {
         state: location.state,
         replace: true,
       });
-    } catch {
-      toast.error("Server error. Try again.");
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || "Register failed"
+      );
     }
   };
 
@@ -102,7 +95,6 @@ function Register() {
       className="auth-overlay"
       onClick={() => navigate(closeTo, { replace: true })}
     >
-      {/* ✅ FORM START */}
       <form
         className="auth-box register-box"
         onClick={(e) => e.stopPropagation()}
@@ -160,18 +152,11 @@ function Register() {
         </div>
 
         {error && (
-          <p
-            style={{
-              color: "red",
-              fontSize: "14px",
-              marginTop: "-6px",
-            }}
-          >
+          <p style={{ color: "red", fontSize: "14px", marginTop: "-6px" }}>
             {error}
           </p>
         )}
 
-        {/* ✅ IMPORTANT */}
         <button type="submit">Register</button>
 
         <p>
@@ -188,7 +173,6 @@ function Register() {
           </span>
         </p>
       </form>
-      {/* ✅ FORM END */}
     </div>
   );
 }

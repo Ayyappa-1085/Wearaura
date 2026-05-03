@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../components/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import api from "../utils/api"; // 🔥 ADDED
 
 function Login() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // kept (not breaking UI)
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -63,23 +64,13 @@ function Login() {
 
       const normalizedEmail = email.toLowerCase().trim();
 
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          password,
-        }),
+      // 🔥 ONLY FIX: fetch → api
+      const res = await api.post("/api/auth/login", {
+        email: normalizedEmail,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Login failed");
-        return;
-      }
+      const data = res.data;
 
       localStorage.clear();
 
@@ -95,7 +86,9 @@ function Login() {
         }
       }, 50);
     } catch (err) {
-      toast.error("Server error. Try again.");
+      toast.error(
+        err?.response?.data?.message || "Server error. Try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -109,7 +102,6 @@ function Login() {
       onMouseWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      {/* ✅ FORM ADDED (ENTER KEY WORKS HERE) */}
       <form
         className="auth-box login-box"
         onClick={(e) => e.stopPropagation()}
@@ -159,7 +151,6 @@ function Login() {
           </p>
         )}
 
-        {/* ✅ BUTTON TYPE FIX */}
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
