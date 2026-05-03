@@ -12,7 +12,6 @@ import ProductsSection from "../sections/ProductsSection";
 
 import "./CategoryLayout.css";
 
-// ❌ UPDATED (removed localhost)
 const API = "/api/products";
 
 function CategoryLayout() {
