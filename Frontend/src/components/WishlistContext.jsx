@@ -10,20 +10,21 @@ export function WishlistProvider({ children }) {
 
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(true);
-
-  // 🔥 NEW: prevent spam clicks
   const [updating, setUpdating] = useState(false);
 
-  // 🔥 FETCH FROM BACKEND
   const fetchWishlist = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("/api/wishlist", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // 🔥 FIX: full backend URL
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/wishlist`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error();
 
@@ -42,7 +43,6 @@ export function WishlistProvider({ children }) {
     }
   };
 
-  // 🔥 LOAD WHEN USER CHANGES
   useEffect(() => {
     if (!loading && isLoggedIn) {
       fetchWishlist();
@@ -52,21 +52,19 @@ export function WishlistProvider({ children }) {
     }
   }, [user, isLoggedIn, loading]);
 
-  // 🔥 TOGGLE (OPTIMISTIC + SAFE)
   const toggleWishlist = async (product) => {
     if (!isLoggedIn) {
       navigate("/login");
       return;
     }
 
-    if (updating) return; // 🔥 prevent double clicks
+    if (updating) return;
 
     const productId = product._id?.toString();
 
     try {
       setUpdating(true);
 
-      // 🔥 OPTIMISTIC UI (instant response)
       setWishlist((prev) => {
         const exists = prev.some((item) => item._id === productId);
 
@@ -79,33 +77,32 @@ export function WishlistProvider({ children }) {
 
       const token = localStorage.getItem("token");
 
-      await fetch("/api/wishlist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId: product._id,
-        }),
-      });
+      // 🔥 FIX: full backend URL
+      await fetch(
+        `${import.meta.env.VITE_API_URL}/api/wishlist`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productId: product._id,
+          }),
+        }
+      );
 
-      // 🔥 FINAL SYNC (real data)
       await fetchWishlist();
     } catch {
       console.log("Wishlist update failed");
-
-      // 🔥 rollback if failed
       await fetchWishlist();
     } finally {
       setUpdating(false);
     }
   };
 
-  // 🔥 CHECK ITEM
   const isWishlisted = (product) => {
     const productId = product._id?.toString();
-
     return wishlist.some((item) => item._id === productId);
   };
 
