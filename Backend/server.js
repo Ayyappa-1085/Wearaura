@@ -3,8 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config({ quiet: true });
 
-const dns = require("dns");
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
