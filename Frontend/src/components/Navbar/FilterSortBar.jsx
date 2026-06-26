@@ -1,16 +1,36 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 function FilterSortBar({
   onSortClick,
   showSortMenu,
   setSortType,
-  filters,
-  setFilters,
 }) {
   const [showFilter, setShowFilter] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
+
+  const updateSearchParams = (changes) => {
+    const searchParams = new URLSearchParams(location.search);
+
+    Object.entries(changes).forEach(([key, value]) => {
+      if (!value) {
+        searchParams.delete(key);
+      } else {
+        searchParams.set(key, value);
+      }
+    });
+
+    navigate({
+      pathname: location.pathname,
+      search: searchParams.toString(),
+    });
+  };
 
   const chooseSort = (type) => {
     setSortType(type);
+    updateSearchParams({ sort: type });
     onSortClick(false);
   };
 
@@ -25,17 +45,16 @@ function FilterSortBar({
   };
 
   const applyFilter = (key, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev[key] === value ? "" : value,
-    }));
+    const searchParams = new URLSearchParams(location.search);
+    const current = searchParams.get(key);
+
+    updateSearchParams({ [key]: current === value ? "" : value });
   };
 
   const clearAll = () => {
-    setFilters({
-      price: "",
-      size: "",
-      color: "",
+    navigate({
+      pathname: location.pathname,
+      search: "",
     });
     setShowFilter(false);
   };

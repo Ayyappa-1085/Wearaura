@@ -122,13 +122,23 @@ function Payment() {
         paymentInfo: paymentDetails,
       };
 
-      await api.post(API, payload);
+      const res = await api.post(API, payload);
+      const createdOrder = res.data;
 
-      clearBag();
+      await clearBag();
 
-      toast.success("Order placed successfully");
+      localStorage.removeItem("WearAura-checkout");
+      localStorage.removeItem("WearAura-address");
 
-      navigate("/account/orders");
+      toast.success(
+        `Order placed successfully. Tracking ID: ${createdOrder.trackingId || createdOrder.orderId}`,
+      );
+
+      navigate("/account/orders", {
+        state: {
+          trackingId: createdOrder.trackingId || createdOrder.orderId,
+        },
+      });
     } catch (error) {
       console.log("ORDER ERROR:", error);
 
@@ -156,6 +166,9 @@ function Payment() {
       // 🔥 FIXED HERE (IMPORTANT)
       const res = await api.post("/api/payment/create-order", {
         items: formattedItems,
+        discount: data.discount || 0,
+        shippingCost: data.shippingCost || 0,
+        totalAmount: data.total || 0,
       });
 
       const order = res.data.order;
@@ -164,7 +177,7 @@ function Payment() {
         key: "rzp_test_SkRHJI7zZDoOMG",
         amount: order.amount,
         currency: "INR",
-        name: "Velora",
+        name: "WearAura",
         description: "Order Payment",
         order_id: order.id,
 
@@ -188,10 +201,12 @@ function Payment() {
             } else {
               toast.error("Payment verification failed");
               isProcessing = false;
+              setLoading(false);
             }
           } catch (err) {
             toast.error("Payment verification failed");
             isProcessing = false;
+            setLoading(false);
           }
         },
 
@@ -239,7 +254,7 @@ function Payment() {
         </div>
 
         <div className="payment-actions">
-          <button onClick={() => navigate("/order-summary")} disabled={loading}>
+          <button onClick={() => navigate("/order-summary", { state: data })} disabled={loading}>
             Back to Summary
           </button>
 

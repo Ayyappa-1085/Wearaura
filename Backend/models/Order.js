@@ -47,6 +47,12 @@ const orderSchema = new mongoose.Schema(
       default: "Placed",
     },
 
+    trackingId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
     totalAmount: {
       type: Number,
       required: true,

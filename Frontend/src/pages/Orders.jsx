@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 // ❌ REMOVE axios
 // import axios from "axios";
@@ -11,10 +12,13 @@ const API = "/api/orders";
 
 function Orders() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [orders, setOrders] = useState([]);
 
   const [loading, setLoading] = useState(true);
+
+  const trackingId = location.state?.trackingId;
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -52,6 +56,12 @@ function Orders() {
       <div className="account-card orders-page-card">
         <h2>Order History</h2>
 
+        {trackingId && (
+          <div className="success-banner">
+            Tracking ID: <strong>{trackingId}</strong>
+          </div>
+        )}
+
         {loading ? (
           <p>Loading orders...</p>
         ) : orders.length === 0 ? (
@@ -68,6 +78,9 @@ function Orders() {
                           src={product.image}
                           alt="product"
                           className="multi-img"
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
                         />
                       </div>
                     ))}

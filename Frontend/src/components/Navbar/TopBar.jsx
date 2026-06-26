@@ -1,7 +1,7 @@
 function TopBar({ hidden }) {
   return (
     <div className={`top-bar ${hidden ? "top-bar-hidden" : ""}`}>
-      <p>Hi Mawa ❤️ Welcome To Our Website ❤️</p>
+      <p>Elegance in Every Thread.</p>
     </div>
   );
 }

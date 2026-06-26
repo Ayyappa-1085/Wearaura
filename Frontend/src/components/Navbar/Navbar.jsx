@@ -22,6 +22,7 @@ function Navbar() {
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   const [sortType, setSortType] = useState("default");
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
 
   const ticking = useRef(false);
   const lastScrollY = useRef(0);
@@ -36,7 +37,8 @@ function Navbar() {
 
   const currentCategory = pathParts[0];
   const isSubCategory = pathParts.length >= 2;
-  const isMobile = window.innerWidth <= 768;
+  const productCategories = ["men", "women", "kids", "footwear"];
+  const isProductBrowsePage = productCategories.includes(currentCategory);
 
   /* FIX: close sort menu when bar hides / route changes */
   useEffect(() => {
@@ -46,11 +48,26 @@ function Navbar() {
   }, [showFilterSort, location.pathname]);
 
   useEffect(() => {
-    if (isAuthPage) {
+    if (!isProductBrowsePage || isAuthPage) {
+      setShowFilterSort(false);
+      setShowSortMenu(false);
+    }
+  }, [isProductBrowsePage, isAuthPage]);
+
+  useEffect(() => {
+    const resetNavbarState = () => {
       setScrolled(false);
       setMobileScrolled(false);
       setShowFilterSort(false);
+      setShowSortMenu(false);
       setProgress(0);
+      lastScrollY.current = 0;
+      ticking.current = false;
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
+
+    if (!isProductBrowsePage || isAuthPage) {
+      resetNavbarState();
       return;
     }
 
@@ -76,7 +93,9 @@ function Navbar() {
         setMobileScrolled(false);
       }
 
-      setShowFilterSort(isSubCategory && scrollTop > 80 && !showSearch);
+      setShowFilterSort(
+        isProductBrowsePage && (isSubCategory || productCategories.includes(currentCategory)) && scrollTop > 80 && !showSearch,
+      );
 
       lastScrollY.current = scrollTop;
       ticking.current = false;
@@ -94,10 +113,18 @@ function Navbar() {
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isSubCategory, showSearch, isAuthPage]);
+  }, [isSubCategory, showSearch, isAuthPage, isProductBrowsePage, currentCategory]);
 
   useEffect(() => {
-    localStorage.setItem("velora-sort", sortType);
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("WearAura-sort", sortType);
   }, [sortType]);
 
   const navStyle = !isMobile
@@ -138,7 +165,7 @@ function Navbar() {
 
         <div className="nav-logo">
           <h2 onClick={() => navigate("/")} style={logoStyle}>
-            Velora
+            WearAura
           </h2>
         </div>
 
@@ -149,6 +176,8 @@ function Navbar() {
         setShowSearch={setShowSearch}
         navigate={navigate}
         location={location}
+        onMenuClick={() => window.dispatchEvent(new Event("wearaura:toggle-mobile-sidebar"))}
+        showMenuButton={isProductBrowsePage && isMobile}
       />
     </>
   );

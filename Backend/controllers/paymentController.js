@@ -11,7 +11,7 @@ const razorpay = new Razorpay({
 /* ================= CREATE PAYMENT ORDER ================= */
 exports.createPaymentOrder = async (req, res) => {
   try {
-    const { items = [] } = req.body;
+    const { items = [], discount = 0, shippingCost = 0, totalAmount } = req.body;
 
     if (!items.length) {
       return res.status(400).json({
@@ -20,7 +20,7 @@ exports.createPaymentOrder = async (req, res) => {
     }
 
     /* 🔥 CALCULATE AMOUNT ON BACKEND (DO NOT TRUST FRONTEND) */
-    let totalAmount = 0;
+    let baseAmount = 0;
 
     for (const item of items) {
       const product = await Product.findById(item.productId || item.product);
@@ -33,11 +33,20 @@ exports.createPaymentOrder = async (req, res) => {
 
       const qty = item.qty || item.quantity;
 
-      totalAmount += product.price * qty;
+      baseAmount += product.price * qty;
     }
 
+    const safeDiscount = Math.max(0, Number(discount) || 0);
+    const safeShipping = Math.max(0, Number(shippingCost) || 0);
+    const payableAmount = Math.max(
+      0,
+      Math.round(
+        (Number(totalAmount) || baseAmount - safeDiscount + safeShipping) * 100,
+      ),
+    );
+
     const options = {
-      amount: totalAmount * 100, // paise
+      amount: payableAmount,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
@@ -50,7 +59,7 @@ exports.createPaymentOrder = async (req, res) => {
     res.json({
       success: true,
       order,
-      amount: totalAmount,
+      amount: payableAmount / 100,
     });
   } catch (error) {
     console.error("CREATE ORDER ERROR:", error);

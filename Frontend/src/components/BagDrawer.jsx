@@ -1,9 +1,10 @@
 import "./BagDrawer.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaTimes, FaMinus, FaPlus } from "react-icons/fa";
+import { FaTimes, FaMinus, FaPlus, FaHeart, FaRegHeart } from "react-icons/fa";
 
 import { useBag } from "../BagContext";
+import { useWishlist } from "./WishlistContext";
 import Recommendations from "./Recommendations";
 import PriceSummary from "./PriceSummary";
 import toast from "react-hot-toast"; // ✅ added
@@ -25,10 +26,13 @@ function BagDrawer() {
     removeFromSaved,
     totalItems,
     totalPrice,
+    coupon,
     discountAmount,
     finalTotal,
     applyCoupon,
   } = useBag();
+
+  const { addToWishlist, removeFromWishlist, isWishlisted } = useWishlist();
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState("");
@@ -85,6 +89,7 @@ function BagDrawer() {
   };
 
   const safeFinalTotal = Number.isFinite(finalTotal) ? finalTotal : totalPrice;
+  const couponAmount = coupon?.discount || 0;
 
   // ✅ CHECK BEFORE CHECKOUT
   const handleCheckout = () => {
@@ -134,7 +139,13 @@ function BagDrawer() {
 
                 return (
                   <div className="bag-item" key={key}>
-                    <img src={item.product.image} alt={item.product.title} />
+                    <img
+                      src={item.product.image}
+                      alt={item.product.title}
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
+                    />
 
                     <div className="bag-info">
                       <h4>{item.product.title}</h4>
@@ -226,6 +237,7 @@ function BagDrawer() {
                           Save for later
                         </button>
                       </div>
+
                     </div>
 
                     <div className="bag-actions">
@@ -241,6 +253,33 @@ function BagDrawer() {
                         }}
                       >
                         <FaTimes />
+                      </button>
+
+                      <button
+                        className={`bag-wishlist-btn ${
+                          isWishlisted(item.product) ? "active" : ""
+                        }`}
+                        disabled={isLoading}
+                        onClick={async () => {
+                          if (isLoading) return;
+
+                          setLoading(key, true);
+
+                          try {
+                            if (isWishlisted(item.product)) {
+                              await removeFromBag(item.product._id, item.size);
+                            } else {
+                              await addToWishlist(item.product);
+                              await removeFromBag(item.product._id, item.size);
+                            }
+                          } catch {
+                            toast.error("Unable to move item to wishlist");
+                          }
+
+                          setLoading(key, false);
+                        }}
+                      >
+                        {isWishlisted(item.product) ? <FaHeart /> : <FaRegHeart />}
                       </button>
                     </div>
                   </div>
@@ -259,8 +298,8 @@ function BagDrawer() {
 
               <PriceSummary
                 totalPrice={totalPrice}
-                discountAmount={appliedCoupon ? discountAmount : 0}
-                finalTotal={appliedCoupon ? safeFinalTotal : totalPrice}
+                discountAmount={couponAmount}
+                finalTotal={safeFinalTotal}
               />
 
               <Recommendations />
@@ -274,7 +313,13 @@ function BagDrawer() {
                       className="bag-item"
                       key={`${item.product._id}-${item.size}`}
                     >
-                      <img src={item.product.image} alt={item.product.title} />
+                      <img
+                        src={item.product.image}
+                        alt={item.product.title}
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                      />
 
                       <div className="bag-info">
                         <h4>{item.product.title}</h4>
@@ -307,7 +352,7 @@ function BagDrawer() {
           <div className="bag-footer">
             <button className="checkout-btn" onClick={handleCheckout}>
               CHECKOUT / ₹
-              {Math.round(appliedCoupon ? safeFinalTotal : totalPrice)}
+              {Math.round(safeFinalTotal)}
             </button>
           </div>
         )}

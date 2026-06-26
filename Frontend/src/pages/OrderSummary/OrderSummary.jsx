@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useBag } from "../../BagContext";
 import "./OrderSummary.css";
@@ -10,25 +10,48 @@ function OrderSummary() {
 
   const { bag, coupon } = useBag();
 
-  const addressData = location.state || {};
+  const savedCheckout =
+    JSON.parse(localStorage.getItem("WearAura-checkout")) || {};
+
+  const addressData =
+    location.state?.addressData || savedCheckout.addressData || {};
 
   const [shipping, setShipping] = useState("standard");
 
   // ✅ FIXED
-  const subtotal = bag.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0,
-  );
+  const subtotal =
+    location.state?.subtotal ??
+    savedCheckout.subtotal ??
+    bag.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  const discountAmount = Math.round((subtotal * (coupon?.discount || 0)) / 100);
+  const discountAmount =
+    coupon?.discount ?? location.state?.discount ?? savedCheckout.discount ?? 0;
 
   const shippingCost = shipping === "express" ? 50 : 0;
 
   const total = Math.round(subtotal - discountAmount + shippingCost);
 
   const handleContinue = () => {
+    const nextState = {
+      addressData,
+      bagItems: bag,
+      shipping,
+      subtotal,
+      discount: discountAmount,
+      shippingCost,
+      total,
+      coupon,
+    };
+
     navigate("/payment", {
-      state: {
+      state: nextState,
+    });
+  };
+
+  useEffect(() => {
+    localStorage.setItem(
+      "WearAura-checkout",
+      JSON.stringify({
         addressData,
         bagItems: bag,
         shipping,
@@ -37,9 +60,9 @@ function OrderSummary() {
         shippingCost,
         total,
         coupon,
-      },
-    });
-  };
+      }),
+    );
+  }, [addressData, bag, shipping, subtotal, discountAmount, shippingCost, total, coupon]);
 
   if (bag.length === 0) {
     return (
@@ -72,7 +95,13 @@ function OrderSummary() {
                 className="summary-item"
                 key={`${item.product._id}-${item.size}`}
               >
-                <img src={item.product.image} alt={item.product.title} />
+                <img
+                  src={item.product.image}
+                  alt={item.product.title}
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
+                />
 
                 <div className="item-details">
                   <h3>{item.product.title}</h3>

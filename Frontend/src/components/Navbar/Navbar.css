@@ -260,12 +260,13 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+
 }
 
 .nav-logo h2 {
   font-weight: 700;
   letter-spacing: 2px;
-  font-family: "Playfair Display", serif;
+  font-family: "Proxima Nova", serif;
   cursor: pointer;
   white-space: nowrap;
   line-height: 1;
@@ -309,6 +310,17 @@ body {
 
 .mobile-nav {
   display: none;
+}
+
+.mobile-menu-trigger {
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
 }
 
 /* ================= MOBILE ================= */
@@ -411,6 +423,10 @@ body {
 
   .mobile-nav svg {
     color: #fff;
+  }
+
+  .mobile-menu-trigger {
+    font-size: 18px;
   }
 
   .mobile-nav svg:hover {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 // ❌ REMOVED axios
 // import axios from "axios";
 
@@ -16,24 +16,22 @@ const API = "/api/products";
 
 function CategoryLayout() {
   const { category, item } = useParams();
+  const location = useLocation();
 
   const isSubCategory = !!item;
 
   const [products, setProducts] = useState([]);
-
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
 
   const [loading, setLoading] = useState(true);
 
-  const [sortType, setSortType] = useState("");
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
 
-  const [showSortMenu, setShowSortMenu] = useState(false);
-
-  const [filters, setFilters] = useState({
-    price: "",
-    size: "",
-    color: "",
-  });
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -41,82 +39,30 @@ function CategoryLayout() {
         setLoading(true);
 
         if (isSubCategory) {
-          const res = await api.get(
-            // ✅ FIXED
-            `${API}?category=${encodeURIComponent(category)}&type=${encodeURIComponent(item)}`,
-          );
+          const searchParams = new URLSearchParams(location.search);
+          searchParams.set("category", category);
+          searchParams.set("type", item);
+
+          const res = await api.get(`${API}?${searchParams.toString()}`);
 
           const data = Array.isArray(res.data)
             ? res.data
             : res.data.products || [];
 
           setProducts(data);
-          setFilteredProducts(data);
         } else {
           setProducts([]);
-          setFilteredProducts([]);
         }
       } catch (error) {
         console.log(error);
         setProducts([]);
-        setFilteredProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
     loadProducts();
-  }, [category, item, isSubCategory]);
-
-  useEffect(() => {
-    let temp = [...products];
-
-    /* Price Filter */
-    if (filters.price) {
-      if (filters.price === "0-999") {
-        temp = temp.filter((p) => p.price <= 999);
-      }
-
-      if (filters.price === "1000-1999") {
-        temp = temp.filter((p) => p.price >= 1000 && p.price <= 1999);
-      }
-
-      if (filters.price === "2000+") {
-        temp = temp.filter((p) => p.price >= 2000);
-      }
-    }
-
-    /* 🔥 FIXED SIZE FILTER */
-    if (filters.size) {
-      temp = temp.filter((p) => p.sizeStock && p.sizeStock[filters.size] > 0);
-    }
-
-    /* Color Filter */
-    if (filters.color) {
-      temp = temp.filter(
-        (p) => p.color && p.color.toLowerCase().includes(filters.color),
-      );
-    }
-
-    /* Sorting */
-    if (sortType === "low") {
-      temp.sort((a, b) => a.price - b.price);
-    }
-
-    if (sortType === "high") {
-      temp.sort((a, b) => b.price - a.price);
-    }
-
-    if (sortType === "az") {
-      temp.sort((a, b) => a.title.localeCompare(b.title));
-    }
-
-    if (sortType === "za") {
-      temp.sort((a, b) => b.title.localeCompare(a.title));
-    }
-
-    setFilteredProducts(temp);
-  }, [products, filters, sortType]);
+  }, [category, item, isSubCategory, location.search]);
 
   return (
     <div
@@ -125,7 +71,7 @@ function CategoryLayout() {
       {!isSubCategory && <SidebarSection />}
 
       <div className="content-wrapper">
-        {!isSubCategory && <OffersSection />}
+        {!isSubCategory && !isMobile && <OffersSection />}
 
         {isSubCategory &&
           (loading ? (
@@ -138,12 +84,7 @@ function CategoryLayout() {
             </div>
           ) : (
             <ProductsSection
-              products={filteredProducts}
-              showSortMenu={showSortMenu}
-              onSortClick={setShowSortMenu}
-              setSortType={setSortType}
-              filters={filters}
-              setFilters={setFilters}
+              products={products}
             />
           ))}
       </div>

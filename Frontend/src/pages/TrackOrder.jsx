@@ -29,11 +29,16 @@ function TrackOrder() {
       // ✅ SAFE DATA
       const orders = Array.isArray(res.data) ? res.data : res.data.orders || [];
 
-      const found = orders.find(
-        (item) =>
-          (item.orderId || item._id).toString().toLowerCase().trim() ===
-          trackingId.toLowerCase().trim(),
-      );
+      const found = orders.find((item) => {
+        const searchValue = trackingId.toLowerCase().trim();
+        const orderValue = (item.orderId || item._id)
+          .toString()
+          .toLowerCase()
+          .trim();
+        const trackingValue = item.trackingId?.toString().toLowerCase().trim();
+
+        return orderValue === searchValue || trackingValue === searchValue;
+      });
 
       setResult(found || false);
     } catch (error) {
@@ -98,7 +103,7 @@ function TrackOrder() {
         <input
           type="text"
           className="track-input"
-          placeholder="Enter Order ID"
+          placeholder="Enter Order / Tracking ID"
           value={trackingId}
           onChange={(e) => setTrackingId(e.target.value)}
         />
@@ -151,7 +156,7 @@ function TrackOrder() {
           </div>
         )}
 
-        <p className="demo-track">Use your Order ID from Orders Page</p>
+        <p className="demo-track">Use your Order ID or Tracking ID from Orders Page</p>
 
         <button onClick={() => navigate("/account/profile")}>
           Back to Profile

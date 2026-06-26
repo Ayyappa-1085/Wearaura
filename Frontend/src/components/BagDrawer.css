@@ -58,6 +58,7 @@
 /* ================= BUTTON RESET ================= */
 .bag-header button,
 .remove-btn,
+.bag-wishlist-btn,
 .qty-box button,
 .checkout-btn,
 .empty-wrap button,
@@ -69,6 +70,7 @@
 /* icon buttons */
 .bag-header button,
 .remove-btn,
+.bag-wishlist-btn,
 .qty-box button {
   background: none;
   border: none;
@@ -422,7 +424,6 @@
   padding-top: 4px;
 }
 
-.wish-btn,
 .remove-btn {
   background: none;
   border: none;
@@ -432,8 +433,28 @@
   padding: 0;
 }
 
-.wish-btn:hover {
-  color: #ff4d6d;
+.bag-wishlist-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.bag-wishlist-btn svg {
+  font-size: 16px;
+}
+
+.bag-wishlist-btn.active {
+  color: #000;
+}
+
+.bag-wishlist-btn:hover {
+  transform: scale(1.12);
 }
 .coupon-applied {
   display: flex;

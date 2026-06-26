@@ -9,7 +9,7 @@ function AdminSidebar({ closeSidebar }) {
 
   return (
     <aside className="admin-sidebar">
-      <h2 className="admin-logo">Velora Admin</h2>
+      <h2 className="admin-logo">WearAura Admin</h2>
 
       <nav>
         <NavLink to="/admin/dashboard" onClick={handleClick}>

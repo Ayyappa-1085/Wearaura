@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useBag } from "../BagContext";
-import API from "../utils/api"; // ✅ central API config
+import api from "../utils/api"; // ✅ central API config
 
 function Recommendations() {
   const { bag, addToBag } = useBag();
@@ -12,7 +11,7 @@ function Recommendations() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await axios.get(`${API}/api/products`);
+        const res = await api.get("/api/products?limit=8");
 
         const data = Array.isArray(res.data)
           ? res.data
@@ -32,11 +31,18 @@ function Recommendations() {
 
   if (bag.length === 0) return null;
 
-  const cartIds = bag.map((item) => item._id || item.id);
+  const cartIds = useMemo(
+    () => bag.map((item) => item._id || item.id),
+    [bag],
+  );
 
-  const suggested = products
-    .filter((item) => !cartIds.includes(item._id || item.id))
-    .slice(0, 4);
+  const suggested = useMemo(
+    () =>
+      products
+        .filter((item) => !cartIds.includes(item._id || item.id))
+        .slice(0, 4),
+    [products, cartIds],
+  );
 
   const handleAdd = (product, size) => {
     addToBag(product, size);
@@ -55,7 +61,13 @@ function Recommendations() {
 
           return (
             <div className="recommend-item" key={itemId}>
-              <img src={item.image} alt={item.title} />
+              <img
+                src={item.image}
+                alt={item.title}
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+              />
 
               <p>{item.title}</p>
 
@@ -93,4 +105,4 @@ function Recommendations() {
   );
 }
 
-export default Recommendations;
+export default memo(Recommendations);

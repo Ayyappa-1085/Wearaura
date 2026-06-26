@@ -4,6 +4,8 @@
   background: #fff;
   cursor: pointer;
   transition: transform 0.25s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 520px 480px;
 }
 
 /* subtle lift */
@@ -40,12 +42,23 @@
   position: absolute;
   top: 14px;
   right: 14px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.94);
   cursor: pointer;
   transition: transform 0.2s ease;
 }
 
 .wishlist-icon svg {
-  font-size: 20px;
+  font-size: 18px;
+  color: #000;
+}
+
+.wishlist-icon.active svg {
   color: #000;
 }
 
@@ -138,15 +151,6 @@
 
   .wishlist-icon svg {
     font-size: 18px;
-  }
-  .wishlist-icon svg {
-    font-size: 20px;
-    color: #000;
-    transition: color 0.2s ease;
-  }
-
-  .wishlist-icon svg:hover {
-    color: red;
   }
 }
 /* SIZE PICKER */

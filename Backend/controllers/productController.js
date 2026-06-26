@@ -3,7 +3,17 @@ const Product = require("../models/Product");
 /* ================= GET PRODUCTS ================= */
 const getProducts = async (req, res) => {
   try {
-    const { category, type, search, page = 1, limit = 12 } = req.query;
+    const {
+      category,
+      type,
+      search,
+      price,
+      size,
+      color,
+      sort,
+      page = 1,
+      limit = 12,
+    } = req.query;
 
     let query = {};
 
@@ -22,6 +32,37 @@ const getProducts = async (req, res) => {
       ];
     }
 
+    if (size) {
+      query[`sizeStock.${size}`] = { $gt: 0 };
+    }
+
+    if (color) {
+      query.color = { $regex: color, $options: "i" };
+    }
+
+    if (price) {
+      if (price === "0-999") {
+        query.price = { $lte: 999 };
+      }
+
+      if (price === "1000-1999") {
+        query.price = { $gte: 1000, $lte: 1999 };
+      }
+
+      if (price === "2000+") {
+        query.price = { $gte: 2000 };
+      }
+    }
+
+    const sortMap = {
+      low: { price: 1 },
+      high: { price: -1 },
+      az: { title: 1 },
+      za: { title: -1 },
+    };
+
+    const sortQuery = sortMap[sort] || { createdAt: -1 };
+
     const pageNum = Number(page);
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
@@ -29,9 +70,12 @@ const getProducts = async (req, res) => {
     const totalProducts = await Product.countDocuments(query);
 
     const products = await Product.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortQuery)
       .skip(skip)
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
+
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
 
     res.status(200).json({
       products,

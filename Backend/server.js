@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -38,7 +40,8 @@ app.use(
 );
 
 /* ================= MIDDLEWARE ================= */
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
+
 
 /* ================= ROUTES ================= */
 app.use("/api/products", productRoutes);
@@ -53,7 +56,7 @@ app.use("/api/payment", paymentRoutes);
 
 /* ================= HEALTH CHECK ================= */
 app.get("/", (req, res) => {
-  res.send("Velora Backend Running");
+  res.send("WearAura Backend Running");
 });
 
 /* ================= DB CONNECTION ================= */

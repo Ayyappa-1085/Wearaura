@@ -9,6 +9,11 @@ const generateOrderId = () => {
   return `VLR${num}`;
 };
 
+const generateTrackingId = () => {
+  const num = Math.floor(1000000000 + Math.random() * 9000000000);
+  return `TRK${num}`;
+};
+
 /* ================= CREATE ORDER ================= */
 const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
@@ -47,11 +52,18 @@ const createOrder = async (req, res) => {
 
       /* ================= UNIQUE ORDER ID ================= */
       let orderId = generateOrderId();
+      let trackingId = generateTrackingId();
 
       let exists = await Order.findOne({ orderId }).session(session);
       while (exists) {
         orderId = generateOrderId();
         exists = await Order.findOne({ orderId }).session(session);
+      }
+
+      let trackingExists = await Order.findOne({ trackingId }).session(session);
+      while (trackingExists) {
+        trackingId = generateTrackingId();
+        trackingExists = await Order.findOne({ trackingId }).session(session);
       }
 
       /* ================= PRE-CHECK STOCK ================= */
@@ -131,6 +143,7 @@ const createOrder = async (req, res) => {
             ...req.body,
             items: normalizedItems,
             orderId,
+            trackingId,
             user: req.user.id,
             idempotencyKey: idempotencyKey || undefined,
             paymentInfo,

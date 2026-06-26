@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { useAuth } from "./components/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -13,19 +13,40 @@ export function BagProvider({ children }) {
 
   const [bag, setBag] = useState([]);
   const [isBagOpen, setIsBagOpen] = useState(false);
-
   const [coupon, setCoupon] = useState(null);
   const [saved, setSaved] = useState([]);
-  const [prevCount, setPrevCount] = useState(0);
+
+  const syncBag = (nextBag) => {
+    const normalized = Array.isArray(nextBag) ? nextBag : [];
+
+    setBag(normalized);
+
+    if (normalized.length === 0) {
+      setCoupon(null);
+    }
+  };
 
   const fetchCart = async () => {
     try {
       const res = await api.get("/api/cart");
       const data = res.data;
-      setBag(Array.isArray(data) ? data : []);
-    } catch {
-      setBag([]);
+      syncBag(data);
+    } catch (err) {
+      console.log(err);
+      syncBag([]);
     }
+  };
+
+  const patchBag = (updater) => {
+    setBag((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+
+      if (Array.isArray(next) && next.length === 0) {
+        setCoupon(null);
+      }
+
+      return Array.isArray(next) ? next : [];
+    });
   };
 
   const fetchSaved = async () => {
@@ -33,54 +54,25 @@ export function BagProvider({ children }) {
       const res = await api.get("/api/saved");
       const data = res.data;
       setSaved(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (err) {
+      console.log(err);
       setSaved([]);
     }
   };
 
   useEffect(() => {
     if (!loading && isLoggedIn) {
-      fetchCart();
-      fetchSaved();
-    } else {
+      void (async () => {
+        await Promise.all([fetchCart(), fetchSaved()]);
+      })();
+      return;
+    }
+
+    queueMicrotask(() => {
       setBag([]);
       setSaved([]);
-    }
+    });
   }, [isLoggedIn, loading]);
-
-  useEffect(() => {
-    if (coupon?.code && bag.length > 0) {
-      const coupons = {
-        SAVE10: 10,
-        SAVE20: 20,
-        WELCOME15: 15,
-      };
-
-      const percent = coupons[coupon.code];
-
-      if (percent) {
-        const discount = Math.round(totalPrice * (percent / 100));
-
-        setCoupon({
-          code: coupon.code,
-          discount,
-        });
-      }
-    }
-  }, [bag]);
-
-  useEffect(() => {
-    if (bag.length === 0 && coupon) {
-      setCoupon(null);
-    }
-  }, [bag]);
-
-  useEffect(() => {
-    if (prevCount === 0 && bag.length > 0) {
-      setCoupon(null);
-    }
-    setPrevCount(bag.length);
-  }, [bag]);
 
   const addToBag = async (product, size = "M") => {
     if (!isLoggedIn) {
@@ -93,16 +85,35 @@ export function BagProvider({ children }) {
       return;
     }
 
+    const previousBag = bag;
+
+    patchBag((prev) => {
+      const index = prev.findIndex(
+        (item) => item.product?._id === product._id && item.size === size,
+      );
+
+      if (index > -1) {
+        return prev.map((item, itemIndex) =>
+          itemIndex === index
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        );
+      }
+
+      return [...prev, { product, size, quantity: 1 }];
+    });
+
     try {
-      await api.post("/api/cart/add", {
+      const res = await api.post("/api/cart/add", {
         productId: product._id,
         size,
         quantity: 1,
       });
 
-      await fetchCart();
+      patchBag(res.data);
     } catch (err) {
       console.log(err);
+      patchBag(previousBag);
     }
   };
 
@@ -111,12 +122,10 @@ export function BagProvider({ children }) {
     try {
       await api.post("/api/cart/clear");
 
-      setBag([]);
-      setCoupon(null);
+      patchBag([]);
     } catch (err) {
       console.log("CLEAR BAG ERROR:", err);
-      setBag([]);
-      setCoupon(null);
+      patchBag([]);
     }
   };
 
@@ -133,7 +142,9 @@ export function BagProvider({ children }) {
       return { error: `Only ${stock} available` };
     }
 
-    setBag((prev) =>
+    const previousBag = bag;
+
+    patchBag((prev) =>
       prev.map((i) =>
         i.product._id === productId && i.size === size
           ? { ...i, quantity: i.quantity + 1 }
@@ -148,16 +159,10 @@ export function BagProvider({ children }) {
         quantity: item.quantity + 1,
       });
 
-      const data = res.data;
-      setBag(Array.isArray(data) ? data : []);
-    } catch {
-      setBag((prev) =>
-        prev.map((i) =>
-          i.product._id === productId && i.size === size
-            ? { ...i, quantity: i.quantity - 1 }
-            : i,
-        ),
-      );
+      patchBag(res.data);
+    } catch (err) {
+      console.log(err);
+      patchBag(previousBag);
     }
   };
 
@@ -173,7 +178,9 @@ export function BagProvider({ children }) {
       return;
     }
 
-    setBag((prev) =>
+    const previousBag = bag;
+
+    patchBag((prev) =>
       prev.map((i) =>
         i.product._id === productId && i.size === size
           ? { ...i, quantity: i.quantity - 1 }
@@ -188,28 +195,34 @@ export function BagProvider({ children }) {
         quantity: item.quantity - 1,
       });
 
-      const data = res.data;
-      setBag(Array.isArray(data) ? data : []);
-    } catch {
-      setBag((prev) =>
-        prev.map((i) =>
-          i.product._id === productId && i.size === size
-            ? { ...i, quantity: i.quantity + 1 }
-            : i,
-        ),
-      );
+      patchBag(res.data);
+    } catch (err) {
+      console.log(err);
+      patchBag(previousBag);
     }
   };
 
   const removeFromBag = async (productId, size) => {
+    const previousBag = bag;
+
+    patchBag((prev) =>
+      prev.filter(
+        (item) =>
+          !(item.product._id === productId && item.size === size),
+      ),
+    );
+
     try {
-      await api.post("/api/cart/remove", {
+      const res = await api.post("/api/cart/remove", {
         productId,
         size,
       });
 
-      await fetchCart();
-    } catch {}
+      patchBag(res.data);
+    } catch (err) {
+      console.log(err);
+      patchBag(previousBag);
+    }
   };
 
   const saveForLater = async (productId, size) => {
@@ -226,7 +239,9 @@ export function BagProvider({ children }) {
 
       await fetchCart();
       await fetchSaved();
-    } catch {}
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const moveToBagFromSaved = async (productId, size) => {
@@ -244,7 +259,9 @@ export function BagProvider({ children }) {
 
       await fetchCart();
       await fetchSaved();
-    } catch {}
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const removeFromSaved = async (productId, size) => {
@@ -255,7 +272,9 @@ export function BagProvider({ children }) {
       });
 
       await fetchSaved();
-    } catch {}
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const openBag = () => setIsBagOpen(true);
@@ -267,6 +286,28 @@ export function BagProvider({ children }) {
     (sum, item) => sum + (item.product?.price || 0) * item.quantity,
     0,
   );
+
+  const resolvedCoupon = useMemo(() => {
+    if (!coupon?.code || bag.length === 0) return null;
+
+    const coupons = {
+      SAVE10: 10,
+      SAVE20: 20,
+      WELCOME15: 15,
+    };
+
+    const percent = coupon.percent || coupons[coupon.code];
+
+    if (!percent) return null;
+
+    const discount = Math.round(totalPrice * (percent / 100));
+
+    return {
+      code: coupon.code,
+      percent,
+      discount,
+    };
+  }, [coupon, bag.length, totalPrice]);
 
   const applyCoupon = (code) => {
     const clean = code?.trim().toUpperCase();
@@ -283,15 +324,13 @@ export function BagProvider({ children }) {
       return { error: "Invalid coupon" };
     }
 
-    const discount = Math.round(totalPrice * (percent / 100));
-
     setCoupon({
       code: clean,
-      discount,
+      percent,
     });
   };
 
-  const discountAmount = coupon?.discount || 0;
+  const discountAmount = resolvedCoupon?.discount || 0;
 
   const finalTotal = Math.max(0, totalPrice - discountAmount);
 
@@ -312,6 +351,7 @@ export function BagProvider({ children }) {
         removeFromSaved,
         totalItems,
         totalPrice,
+        coupon: resolvedCoupon,
         discountAmount,
         finalTotal,
         applyCoupon,
@@ -323,6 +363,7 @@ export function BagProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useBag() {
   return useContext(BagContext);
 }

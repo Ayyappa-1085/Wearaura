@@ -1,13 +1,24 @@
-import { FaSearch, FaUser, FaHeart, FaShoppingCart } from "react-icons/fa";
+import { FaBars, FaSearch, FaUser, FaHeart, FaShoppingCart } from "react-icons/fa";
 import { useWishlist } from "../WishlistContext";
 import { useBag } from "../../BagContext";
 
-function MobileNav({ setShowSearch, navigate, location }) {
+function MobileNav({ setShowSearch, navigate, location, onMenuClick, showMenuButton }) {
   const { wishlist } = useWishlist();
   const { totalItems, openBag } = useBag();
 
   return (
     <div className="mobile-nav">
+      {showMenuButton && (
+        <button
+          type="button"
+          className="mobile-menu-trigger"
+          onClick={onMenuClick}
+          aria-label="Open categories"
+        >
+          <FaBars />
+        </button>
+      )}
+
       <FaSearch onClick={() => setShowSearch((prev) => !prev)} />
 
       <FaUser

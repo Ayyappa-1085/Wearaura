@@ -5,7 +5,7 @@ const cloudinary = require("../config/cloudinary");
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "velora-products",
+    folder: "wearaura-products",
     allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
 });

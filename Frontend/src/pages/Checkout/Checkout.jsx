@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useBag } from "../../BagContext";
 import "./Checkout.css";
 
 function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { bag, totalItems, totalPrice, coupon } = useBag();
 
-  const savedAddress = JSON.parse(localStorage.getItem("velora-address")) || {};
+  const savedAddress = JSON.parse(localStorage.getItem("WearAura-address")) || {};
+  const savedCheckout =
+    JSON.parse(localStorage.getItem("WearAura-checkout")) || {};
+  const incomingState = location.state || savedCheckout;
 
   const [formData, setFormData] = useState({
     name: savedAddress.name || "",
@@ -25,9 +29,7 @@ function Checkout() {
   const [cityOptions, setCityOptions] = useState([]);
   const [error, setError] = useState("");
 
-  const discountAmount = Math.round(
-    (totalPrice * (coupon?.discount || 0)) / 100,
-  );
+  const discountAmount = coupon?.discount || incomingState.discount || 0;
 
   const finalTotal = Math.round(totalPrice - discountAmount);
 
@@ -103,11 +105,21 @@ function Checkout() {
       return;
     }
 
-    localStorage.setItem("velora-address", JSON.stringify(formData));
+    const checkoutState = {
+      addressData: formData,
+      bagItems: bag,
+      subtotal: totalPrice,
+      discount: discountAmount,
+      shippingCost: 0,
+      total: finalTotal,
+      coupon,
+    };
 
-    // ✅ ONLY CHANGE (FIX FLOW)
+    localStorage.setItem("WearAura-address", JSON.stringify(formData));
+    localStorage.setItem("WearAura-checkout", JSON.stringify(checkoutState));
+
     navigate("/order-summary", {
-      state: formData,
+      state: checkoutState,
     });
   };
 

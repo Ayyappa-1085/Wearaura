@@ -11,3 +11,26 @@ export const CATEGORY_ITEMS = {
   kids: ["shirts", "pants"],
   footwear: ["sneakers", "formal"],
 };
+
+export const CATEGORY_META = {
+  men: {
+    label: "Men",
+    icon: "👔",
+    description: "Tailored essentials",
+  },
+  women: {
+    label: "Women",
+    icon: "👗",
+    description: "Modern classics",
+  },
+  kids: {
+    label: "Kids",
+    icon: "🧸",
+    description: "Playful everyday wear",
+  },
+  footwear: {
+    label: "Footwear",
+    icon: "👟",
+    description: "Comfort first",
+  },
+};

@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
 const WishlistContext = createContext();
 
@@ -10,25 +11,17 @@ export function WishlistProvider({ children }) {
 
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const wishlistRef = useRef([]);
+  const pendingOpsRef = useRef(new Set());
+
+  useEffect(() => {
+    wishlistRef.current = wishlist;
+  }, [wishlist]);
 
   const fetchWishlist = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      // 🔥 FIX: full backend URL
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/wishlist`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
+      const res = await api.get("/api/wishlist");
+      const data = Array.isArray(res.data) ? res.data : [];
 
       const normalized = data.map((item) => ({
         ...item,
@@ -36,8 +29,10 @@ export function WishlistProvider({ children }) {
       }));
 
       setWishlist(normalized);
+      wishlistRef.current = normalized;
     } catch {
       setWishlist([]);
+      wishlistRef.current = [];
     } finally {
       setWishlistLoading(false);
     }
@@ -45,65 +40,134 @@ export function WishlistProvider({ children }) {
 
   useEffect(() => {
     if (!loading && isLoggedIn) {
-      fetchWishlist();
+      void fetchWishlist();
     } else if (!isLoggedIn) {
       setWishlist([]);
+      wishlistRef.current = [];
       setWishlistLoading(false);
     }
   }, [user, isLoggedIn, loading]);
 
+  const updateWishlistState = (updater) => {
+    setWishlist((prev) => {
+      const next = updater(prev);
+      wishlistRef.current = next;
+      return next;
+    });
+  };
+
   const toggleWishlist = async (product) => {
     if (!isLoggedIn) {
       navigate("/login");
-      return;
+      return false;
     }
 
-    if (updating) return;
+    const productId = product?._id?.toString();
 
-    const productId = product._id?.toString();
+    if (!productId || pendingOpsRef.current.has(productId)) {
+      return false;
+    }
+
+    pendingOpsRef.current.add(productId);
+
+    const previousWishlist = wishlistRef.current;
+    const isCurrentlyWishlisted = wishlistRef.current.some(
+      (item) => item._id === productId,
+    );
+
+    updateWishlistState((prev) => {
+      if (isCurrentlyWishlisted) {
+        return prev.filter((item) => item._id !== productId);
+      }
+
+      return prev.some((item) => item._id === productId)
+        ? prev
+        : [...prev, { ...product, _id: productId }];
+    });
 
     try {
-      setUpdating(true);
-
-      setWishlist((prev) => {
-        const exists = prev.some((item) => item._id === productId);
-
-        if (exists) {
-          return prev.filter((item) => item._id !== productId);
-        } else {
-          return [...prev, product];
-        }
-      });
-
-      const token = localStorage.getItem("token");
-
-      // 🔥 FIX: full backend URL
-      await fetch(
-        `${import.meta.env.VITE_API_URL}/api/wishlist`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            productId: product._id,
-          }),
-        }
-      );
-
-      await fetchWishlist();
+      await api.post("/api/wishlist", { productId });
+      return true;
     } catch {
-      console.log("Wishlist update failed");
-      await fetchWishlist();
+      setWishlist(previousWishlist);
+      wishlistRef.current = previousWishlist;
+      return false;
     } finally {
-      setUpdating(false);
+      pendingOpsRef.current.delete(productId);
+    }
+  };
+
+  const addToWishlist = async (product) => {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return false;
+    }
+
+    const productId = product?._id?.toString();
+
+    if (!productId || pendingOpsRef.current.has(productId)) {
+      return false;
+    }
+
+    if (wishlistRef.current.some((item) => item._id === productId)) {
+      return true;
+    }
+
+    pendingOpsRef.current.add(productId);
+
+    const previousWishlist = wishlistRef.current;
+    const normalizedProduct = { ...product, _id: productId };
+
+    updateWishlistState((prev) => [...prev, normalizedProduct]);
+
+    try {
+      await api.post("/api/wishlist", { productId });
+      return true;
+    } catch {
+      setWishlist(previousWishlist);
+      wishlistRef.current = previousWishlist;
+      return false;
+    } finally {
+      pendingOpsRef.current.delete(productId);
+    }
+  };
+
+  const removeFromWishlist = async (product) => {
+    if (!isLoggedIn) {
+      return false;
+    }
+
+    const productId = product?._id?.toString();
+
+    if (!productId || pendingOpsRef.current.has(productId)) {
+      return false;
+    }
+
+    if (!wishlistRef.current.some((item) => item._id === productId)) {
+      return true;
+    }
+
+    pendingOpsRef.current.add(productId);
+
+    const previousWishlist = wishlistRef.current;
+
+    updateWishlistState((prev) => prev.filter((item) => item._id !== productId));
+
+    try {
+      await api.post("/api/wishlist", { productId });
+      return true;
+    } catch {
+      setWishlist(previousWishlist);
+      wishlistRef.current = previousWishlist;
+      return false;
+    } finally {
+      pendingOpsRef.current.delete(productId);
     }
   };
 
   const isWishlisted = (product) => {
-    const productId = product._id?.toString();
-    return wishlist.some((item) => item._id === productId);
+    const productId = product?._id?.toString();
+    return wishlistRef.current.some((item) => item._id === productId);
   };
 
   return (
@@ -112,6 +176,8 @@ export function WishlistProvider({ children }) {
         wishlist,
         wishlistLoading,
         toggleWishlist,
+        addToWishlist,
+        removeFromWishlist,
         isWishlisted,
       }}
     >
