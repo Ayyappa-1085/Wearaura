@@ -10,6 +10,17 @@ import footwearImg from "../assets/footware.png";
 function Homepage() {
   const navigate = useNavigate();
 
+  const handleCategoryClick = (categoryKey) => {
+    if (window.innerWidth <= 768) {
+      navigate(`/${categoryKey}`, {
+        state: { openMobileSidebar: true },
+      });
+      return;
+    }
+
+    navigate(`/${categoryKey}`);
+  };
+
   useEffect(() => {
     [menImg, womenImg, kidsImg, footwearImg].forEach((src) => {
       const image = new Image();
@@ -20,12 +31,12 @@ function Homepage() {
   return (
     <div className="home-container">
       <div className="main-layout">
-        <div className="section men" onClick={() => navigate("/men")}>
+        <div className="section men" onClick={() => handleCategoryClick("men")}>
           <img src={menImg} alt="Men" loading="eager" fetchPriority="high" />
           <div className="overlay">MEN</div>
         </div>
 
-        <div className="section women" onClick={() => navigate("/women")}>
+        <div className="section women" onClick={() => handleCategoryClick("women")}>
           <img
             src={womenImg}
             alt="Women"
@@ -36,7 +47,7 @@ function Homepage() {
         </div>
 
         <div className="right-section">
-          <div className="section kids" onClick={() => navigate("/kids")}>
+          <div className="section kids" onClick={() => handleCategoryClick("kids")}>
             <img
               src={kidsImg}
               alt="Kids"
@@ -48,7 +59,7 @@ function Homepage() {
 
           <div
             className="section footwear"
-            onClick={() => navigate("/footwear")}
+            onClick={() => handleCategoryClick("footwear")}
           >
             <img
               src={footwearImg}

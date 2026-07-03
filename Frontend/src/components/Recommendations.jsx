@@ -29,8 +29,6 @@ function Recommendations() {
     loadProducts();
   }, []);
 
-  if (bag.length === 0) return null;
-
   const cartIds = useMemo(
     () => bag.map((item) => item._id || item.id),
     [bag],
@@ -43,6 +41,8 @@ function Recommendations() {
         .slice(0, 4),
     [products, cartIds],
   );
+
+  if (bag.length === 0 || suggested.length === 0) return null;
 
   const handleAdd = (product, size) => {
     addToBag(product, size);

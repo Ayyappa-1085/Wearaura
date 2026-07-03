@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useBag } from "../../BagContext";
 import toast from "react-hot-toast";
@@ -7,6 +7,7 @@ import "./Payment.css";
 import api from "../../utils/api";
 
 const API = "/api/orders";
+const RAZORPAY_SCRIPT_ID = "razorpay-checkout-js";
 
 let isProcessing = false;
 
@@ -18,6 +19,40 @@ function Payment() {
   const data = location.state || {};
 
   const [loading, setLoading] = useState(false);
+  const [razorpayReady, setRazorpayReady] = useState(false);
+
+  useEffect(() => {
+    if (window.Razorpay) {
+      setRazorpayReady(true);
+      return;
+    }
+
+    const existingScript = document.getElementById(RAZORPAY_SCRIPT_ID);
+
+    const markReady = () => setRazorpayReady(true);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", markReady);
+
+      return () => existingScript.removeEventListener("load", markReady);
+    }
+
+    const script = document.createElement("script");
+    script.id = RAZORPAY_SCRIPT_ID;
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = markReady;
+    script.onerror = () => {
+      toast.error("Failed to load Razorpay");
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, []);
 
   /* ================= 🔥 CART VALIDATION ================= */
   const validateCart = async () => {
@@ -156,6 +191,11 @@ function Payment() {
   /* ================= 🔥 PAYMENT ================= */
   const handleRazorpayPayment = async () => {
     try {
+      if (!razorpayReady) {
+        toast.error("Razorpay is still loading");
+        return;
+      }
+
       const valid = await validateCart();
       if (!valid) return;
 
@@ -174,7 +214,7 @@ function Payment() {
       const order = res.data.order;
 
       const options = {
-        key: "rzp_test_SkRHJI7zZDoOMG",
+        key: import.meta.env.VITE_RAZORPAY_KEY,
         amount: order.amount,
         currency: "INR",
         name: "WearAura",
@@ -261,9 +301,9 @@ function Payment() {
           <button
             className="home-btn"
             onClick={handleRazorpayPayment}
-            disabled={loading}
+            disabled={loading || !razorpayReady}
           >
-            {loading ? "Processing..." : "Pay Now"}
+            {loading ? "Processing..." : razorpayReady ? "Pay Now" : "Loading Payment..."}
           </button>
         </div>
       </div>

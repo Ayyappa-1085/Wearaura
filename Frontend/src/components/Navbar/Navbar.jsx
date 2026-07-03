@@ -177,7 +177,7 @@ function Navbar() {
         navigate={navigate}
         location={location}
         onMenuClick={() => window.dispatchEvent(new Event("wearaura:toggle-mobile-sidebar"))}
-        showMenuButton={isProductBrowsePage && isMobile}
+        showMenuButton={false}
       />
     </>
   );

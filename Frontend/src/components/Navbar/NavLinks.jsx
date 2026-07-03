@@ -16,6 +16,17 @@ function NavLinks({
 }) {
   const showMobileSearch = isMobile && showSearch;
 
+  const handleCategoryClick = (categoryKey) => {
+    if (isMobile) {
+      navigate(`/${categoryKey}`, {
+        state: { openMobileSidebar: true },
+      });
+      return;
+    }
+
+    navigate(`/${categoryKey}`);
+  };
+
   return (
     <div className="nav-left">
       {showMobileSearch ? (
@@ -35,28 +46,28 @@ function NavLinks({
         <>
           <a
             className={currentCategory === "men" ? "active" : ""}
-            onClick={() => navigate("/men")}
+            onClick={() => handleCategoryClick("men")}
           >
             MEN
           </a>
 
           <a
             className={currentCategory === "women" ? "active" : ""}
-            onClick={() => navigate("/women")}
+            onClick={() => handleCategoryClick("women")}
           >
             WOMEN
           </a>
 
           <a
             className={currentCategory === "kids" ? "active" : ""}
-            onClick={() => navigate("/kids")}
+            onClick={() => handleCategoryClick("kids")}
           >
             KIDS
           </a>
 
           <a
             className={currentCategory === "footwear" ? "active" : ""}
-            onClick={() => navigate("/footwear")}
+            onClick={() => handleCategoryClick("footwear")}
           >
             FOOTWEAR
           </a>

@@ -19,10 +19,6 @@ function AdminStock() {
   // ⚠️ KEEP (not breaking structure)
   const getToken = () => localStorage.getItem("token");
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
   const loadProducts = async () => {
     try {
       const res = await api.get("/api/products?limit=1000");
@@ -32,6 +28,10 @@ function AdminStock() {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const updateStock = async (id) => {
     const product = products.find((p) => p._id === id);
