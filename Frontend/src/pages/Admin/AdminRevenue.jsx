@@ -56,7 +56,8 @@ function AdminRevenue() {
         const start30 = new Date(startToday);
         start30.setDate(startToday.getDate() - 29);
 
-        const getAmount = (item) => Number(item.totalAmount || item.total || 0);
+        const getAmount = (item) =>
+          Number(item.finalAmount ?? item.totalAmount ?? item.total ?? 0);
 
         const total = orders.reduce((sum, item) => sum + getAmount(item), 0);
 

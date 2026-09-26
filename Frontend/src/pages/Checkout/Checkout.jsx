@@ -30,8 +30,9 @@ function Checkout() {
   const [error, setError] = useState("");
 
   const discountAmount = coupon?.discount || incomingState.discount || 0;
+  const couponCode = coupon?.code || incomingState.couponCode || null;
 
-  const finalTotal = Math.round(totalPrice - discountAmount);
+  const finalAmount = Math.round(totalPrice - discountAmount);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -110,8 +111,9 @@ function Checkout() {
       bagItems: bag,
       subtotal: totalPrice,
       discount: discountAmount,
+      couponCode,
       shippingCost: 0,
-      total: finalTotal,
+      finalAmount,
       coupon,
     };
 
@@ -222,10 +224,10 @@ function Checkout() {
             <p>Items: {totalItems}</p>
             <p>Subtotal: ₹{totalPrice}</p>
 
-            {coupon?.discount > 0 && <p>Discount: -₹{discountAmount}</p>}
+            {discountAmount > 0 && <p>Discount ({couponCode}): -₹{discountAmount}</p>}
 
             <p>
-              <strong>Total: ₹{finalTotal}</strong>
+              <strong>Total: ₹{finalAmount}</strong>
             </p>
 
             <hr />

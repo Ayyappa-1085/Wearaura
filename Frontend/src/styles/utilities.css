@@ -1,0 +1,128 @@
+/* ==========================================================================
+   VELORA MOTION DESIGN SYSTEM — UTILITIES & CLASSES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. ROUTE TRANSITIONS
+   -------------------------------------------------------------------------- */
+.velora-route-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  will-change: opacity, transform;
+}
+
+.velora-page-fade {
+  animation: veloraPageEnter var(--motion-page) var(--motion-ease-out) both;
+}
+
+/* --------------------------------------------------------------------------
+   2. SCROLL REVEAL SYSTEM (INTERSECTION OBSERVER TARGETS)
+   -------------------------------------------------------------------------- */
+[data-motion],
+.reveal-init {
+  opacity: 0;
+  transition: opacity var(--motion-slow) var(--motion-ease-out),
+              transform var(--motion-slow) var(--motion-ease-out);
+  will-change: opacity, transform;
+}
+
+[data-motion="fade-up"],
+.reveal-init {
+  transform: translateY(18px);
+}
+
+[data-motion="fade-down"] {
+  transform: translateY(-18px);
+}
+
+[data-motion="fade-left"] {
+  transform: translateX(18px);
+}
+
+[data-motion="fade-right"] {
+  transform: translateX(-18px);
+}
+
+[data-motion="scale"] {
+  transform: scale(0.96);
+}
+
+/* Active State Triggered by Animation Controller */
+[data-motion].motion-revealed,
+.reveal-init.reveal-active {
+  opacity: 1 !important;
+  transform: translate(0, 0) scale(1) !important;
+}
+
+/* Stagger calculation delay hook */
+[data-motion-delay] {
+  transition-delay: var(--motion-delay, 0ms);
+}
+
+/* --------------------------------------------------------------------------
+   3. UNIVERSAL INTERACTIVE MICRO-INTERACTIONS
+   -------------------------------------------------------------------------- */
+/* Smooth Hover Lift */
+.velora-hover-lift {
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              box-shadow var(--motion-fast) var(--motion-ease-out);
+}
+
+.velora-hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+.velora-hover-lift:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* Buttons Subtle Tap / Press */
+.velora-tap-feedback {
+  transition: transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.velora-tap-feedback:active {
+  transform: scale(0.975);
+}
+
+/* Focus Visible Rings (Keyboard Accessibility) */
+.velora-focus-ring:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 3px;
+}
+
+/* Form Error Shake */
+.velora-shake {
+  animation: veloraShake 300ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* --------------------------------------------------------------------------
+   4. REDUCED MOTION ACCESSIBILITY OVERRIDES
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-motion],
+  .reveal-init {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .velora-page-fade {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+

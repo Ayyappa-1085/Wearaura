@@ -3,17 +3,22 @@
   position: fixed;
   inset: 0;
   background: rgba(255, 255, 255, 0.08);
+  background: rgba(17, 17, 17, 0.45);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   opacity: 0;
   visibility: hidden;
   transition: 0.3s ease;
+  pointer-events: none;
+  transition: opacity var(--motion-normal) var(--motion-ease-emphasized),
+              visibility var(--motion-normal) var(--motion-ease-emphasized);
   z-index: 2000;
 }
 
 .bag-overlay.show {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 /* ================= DRAWER ================= */
@@ -22,6 +27,8 @@
   top: 0;
   right: -420px;
   width: 420px;
+  right: 0;
+  width: min(420px, 100vw);
   height: 100vh;
   background: #000;
   color: #fff;
@@ -31,10 +38,14 @@
   flex-direction: column;
 
   transition: right 0.35s ease;
+  transform: translateX(100%);
+  transition: transform var(--motion-normal) var(--motion-ease-emphasized);
+  will-change: transform;
 }
 
 .bag-drawer.open {
   right: 0;
+  transform: translateX(0);
 }
 
 /* ================= HEADER ================= */
@@ -126,6 +137,18 @@
 .remove-btn {
   font-size: 16px;
   padding-top: 2px;
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              opacity var(--motion-fast) ease;
+  opacity: 0.75;
+}
+
+.remove-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.remove-btn:active {
+  transform: scale(0.9);
 }
 
 /* ================= QTY ================= */
@@ -138,6 +161,22 @@
 
 .qty-box button {
   font-size: 12px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              background var(--motion-fast) ease;
+}
+
+.qty-box button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.qty-box button:active {
+  transform: scale(0.88);
 }
 
 .qty-box span {
@@ -200,6 +239,23 @@
 
   font-weight: 700;
   font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              background var(--motion-fast) var(--motion-ease-out),
+              color var(--motion-fast) var(--motion-ease-out);
+}
+
+.checkout-btn:hover,
+.bag-footer button:hover {
+  background: #f0f0f0;
+  transform: translateY(-1.5px);
+}
+
+.checkout-btn:active,
+.bag-footer button:active {
+  transform: scale(0.985);
 }
 
 /* ================= COMMON BLOCKS ================= */

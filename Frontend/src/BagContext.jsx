@@ -74,7 +74,7 @@ export function BagProvider({ children }) {
     });
   }, [isLoggedIn, loading]);
 
-  const addToBag = async (product, size = "M") => {
+  const addToBag = async (product, size = "M", quantity = 1) => {
     if (!isLoggedIn) {
       navigate("/login");
       return;
@@ -85,6 +85,7 @@ export function BagProvider({ children }) {
       return;
     }
 
+    const qty = Math.max(1, Number(quantity) || 1);
     const previousBag = bag;
 
     patchBag((prev) => {
@@ -95,19 +96,19 @@ export function BagProvider({ children }) {
       if (index > -1) {
         return prev.map((item, itemIndex) =>
           itemIndex === index
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + qty }
             : item,
         );
       }
 
-      return [...prev, { product, size, quantity: 1 }];
+      return [...prev, { product, size, quantity: qty }];
     });
 
     try {
       const res = await api.post("/api/cart/add", {
         productId: product._id,
         size,
-        quantity: 1,
+        quantity: qty,
       });
 
       patchBag(res.data);

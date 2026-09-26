@@ -19,6 +19,9 @@ function CategoryLayout() {
   const location = useLocation();
 
   const isSubCategory = !!item;
+  const showBanner = ["/men", "/women", "/kids", "/footwear"].includes(
+    location.pathname.toLowerCase(),
+  );
 
   const [products, setProducts] = useState([]);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -71,7 +74,7 @@ function CategoryLayout() {
       {!isSubCategory && <SidebarSection />}
 
       <div className="content-wrapper">
-        {!isSubCategory && !isMobile && <OffersSection />}
+        {showBanner && <OffersSection />}
 
         {isSubCategory &&
           (loading ? (
@@ -83,9 +86,7 @@ function CategoryLayout() {
               Loading...
             </div>
           ) : (
-            <ProductsSection
-              products={products}
-            />
+            <ProductsSection products={products} />
           ))}
       </div>
     </div>

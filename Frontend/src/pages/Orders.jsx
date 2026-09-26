@@ -51,6 +51,21 @@ function Orders() {
     });
   };
 
+  const getAmounts = (order) => {
+    const subtotal = Number(order.subtotal ?? order.totalAmount ?? 0);
+    const discountAmount = Number(order.discountAmount ?? 0);
+    const finalAmount = Number(
+      order.finalAmount ?? order.totalAmount ?? subtotal,
+    );
+
+    return {
+      subtotal,
+      discountAmount,
+      finalAmount,
+      couponCode: order.couponCode || null,
+    };
+  };
+
   return (
     <div className="account-page">
       <div className="account-card orders-page-card">
@@ -68,7 +83,10 @@ function Orders() {
           <p>No orders yet.</p>
         ) : (
           <div className="orders-list">
-            {orders.map((item) => (
+            {orders.map((item) => {
+              const amounts = getAmounts(item);
+
+              return (
               <div className="order-card new-order-card" key={item._id}>
                 <div className="order-top">
                   <div className="multi-order-images">
@@ -97,7 +115,16 @@ function Orders() {
                   </div>
 
                   <div className="order-side">
-                    <h4>₹{item.totalAmount}</h4>
+                    <h4>₹{amounts.finalAmount}</h4>
+
+                    <p>Subtotal: ₹{amounts.subtotal}</p>
+
+                    <p>
+                      Discount{amounts.couponCode ? ` (${amounts.couponCode})` : ""}: -₹
+                      {amounts.discountAmount}
+                    </p>
+
+                    <p>Final: ₹{amounts.finalAmount}</p>
 
                     <span
                       className={`order-status ${
@@ -125,7 +152,8 @@ function Orders() {
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

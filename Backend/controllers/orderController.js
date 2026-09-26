@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const Cart = require("../models/Cart");
+const { calculateOrderPricing } = require("../utils/orderPricing");
 
 /* ================= GENERATE ORDER ID ================= */
 const generateOrderId = () => {
@@ -22,7 +23,14 @@ const createOrder = async (req, res) => {
     let createdOrder = null;
 
     await session.withTransaction(async () => {
-      const { items = [], idempotencyKey, paymentInfo } = req.body;
+      const {
+        items = [],
+        idempotencyKey,
+        paymentInfo,
+        couponCode = null,
+        shippingMethod = "standard",
+        taxAmount = 0,
+      } = req.body;
 
       /* ================= BASIC VALIDATION ================= */
       if (!items.length) {
@@ -49,6 +57,14 @@ const createOrder = async (req, res) => {
           return;
         }
       }
+
+      const pricing = await calculateOrderPricing({
+        items,
+        couponCode,
+        shippingMethod,
+        taxAmount,
+        session,
+      });
 
       /* ================= UNIQUE ORDER ID ================= */
       let orderId = generateOrderId();
@@ -111,30 +127,8 @@ const createOrder = async (req, res) => {
         }
       }
 
-      /* ================= TOTAL CALCULATION ================= */
-      let calculatedTotal = 0;
-
-      for (const item of items) {
-        const productId = item.productId || item.product;
-        const qty = item.qty || item.quantity;
-
-        const product = await Product.findById(productId).session(session);
-
-        if (!product) {
-          throw new Error("Product not found");
-        }
-
-        calculatedTotal += product.price * qty;
-      }
-
       /* ================= NORMALIZE ITEMS ================= */
-      const normalizedItems = items.map((item) => ({
-        title: item.title,
-        price: item.price,
-        qty: item.qty || item.quantity,
-        size: item.size,
-        image: item.image || "",
-      }));
+      const normalizedItems = pricing.normalizedItems;
 
       /* ================= CREATE ORDER ================= */
       const order = await Order.create(
@@ -147,7 +141,13 @@ const createOrder = async (req, res) => {
             user: req.user.id,
             idempotencyKey: idempotencyKey || undefined,
             paymentInfo,
-            totalAmount: calculatedTotal,
+            subtotal: pricing.subtotal,
+            couponCode: pricing.couponCode,
+            discountAmount: pricing.discountAmount,
+            shippingFee: pricing.shippingFee,
+            taxAmount: pricing.taxAmount,
+            finalAmount: pricing.finalAmount,
+            totalAmount: pricing.finalAmount,
           },
         ],
         { session }

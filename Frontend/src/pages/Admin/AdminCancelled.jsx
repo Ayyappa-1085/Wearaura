@@ -66,7 +66,9 @@ function AdminCancelled() {
               <div className="cancel-right">
                 <span className="cancel-badge">{item.status}</span>
 
-                <strong>₹{Math.round(item.totalAmount || 0)}</strong>
+                <strong>
+                  ₹{Math.round(item.finalAmount ?? item.totalAmount ?? item.subtotal ?? 0)}
+                </strong>
               </div>
             </div>
           ))}

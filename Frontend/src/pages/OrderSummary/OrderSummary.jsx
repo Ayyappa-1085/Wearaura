@@ -26,20 +26,23 @@ function OrderSummary() {
 
   const discountAmount =
     coupon?.discount ?? location.state?.discount ?? savedCheckout.discount ?? 0;
+  const couponCode =
+    coupon?.code ?? location.state?.couponCode ?? savedCheckout.couponCode ?? null;
 
   const shippingCost = shipping === "express" ? 50 : 0;
 
-  const total = Math.round(subtotal - discountAmount + shippingCost);
+  const finalAmount = Math.round(subtotal - discountAmount + shippingCost);
 
   const handleContinue = () => {
     const nextState = {
       addressData,
       bagItems: bag,
-      shipping,
+      shippingMethod: shipping,
       subtotal,
       discount: discountAmount,
       shippingCost,
-      total,
+      couponCode,
+      finalAmount,
       coupon,
     };
 
@@ -54,15 +57,16 @@ function OrderSummary() {
       JSON.stringify({
         addressData,
         bagItems: bag,
-        shipping,
+        shippingMethod: shipping,
         subtotal,
         discount: discountAmount,
         shippingCost,
-        total,
+        couponCode,
+        finalAmount,
         coupon,
       }),
     );
-  }, [addressData, bag, shipping, subtotal, discountAmount, shippingCost, total, coupon]);
+  }, [addressData, bag, shipping, subtotal, discountAmount, shippingCost, finalAmount, coupon, couponCode]);
 
   if (bag.length === 0) {
     return (
@@ -174,9 +178,9 @@ function OrderSummary() {
               <span>₹{subtotal}</span>
             </div>
 
-            {coupon?.discount > 0 && (
+            {discountAmount > 0 && (
               <div className="bill-line">
-                <span>Coupon ({coupon.code})</span>
+                <span>Coupon ({couponCode})</span>
 
                 <span>
                   -₹
@@ -194,7 +198,7 @@ function OrderSummary() {
             <div className="bill-line grand-total">
               <span>Total</span>
 
-              <span>₹{total}</span>
+              <span>₹{finalAmount}</span>
             </div>
 
             <button className="pay-btn" onClick={handleContinue}>

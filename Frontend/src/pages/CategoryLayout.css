@@ -3,13 +3,28 @@
 /* ================= MAIN LAYOUT ================= */
 .category-layout {
   display: flex;
-  /* FIX: was calc(100vh - 112px) hardcoded — now uses dvh with a safe offset */
   min-height: calc(100dvh - 108px);
+}
+
+/* Root Category Pages (e.g. /men, /women): Fit completely within 1 screen with NO scrolling */
+.category-layout.root-page {
+  height: calc(100dvh - 108px);
+  max-height: calc(100dvh - 108px);
+  overflow: hidden;
+}
+
+/* Sub-pages with products (e.g. /men/shirts): Natural scroll for product browsing */
+.category-layout.sub-page {
+  height: auto;
+  min-height: calc(100dvh - 108px);
+  overflow: visible;
 }
 
 /* SIDEBAR */
 .sidebar-wrapper {
-  width: 250px;
+  width: auto;
+  transition: width 240ms cubic-bezier(0.2, 0, 0, 1);
+  flex-shrink: 0;
 }
 
 /* ================= CONTENT ================= */
@@ -18,6 +33,28 @@
   display: flex;
   flex-direction: column;
   padding: 10px 12px;
+  min-width: 0;
+}
+
+.category-layout.root-page .content-wrapper {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.offers-wrapper-desktop {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* ================= PRODUCTS ================= */
@@ -25,7 +62,6 @@
   flex: 1;
   width: 100%;
   max-width: none;
-
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -54,38 +90,50 @@
     position: relative;
   }
 
-  /* Sidebar root pages: /men */
+  /* Root page on mobile: 100% fits within screen without vertical scroll */
   .category-layout.root-page {
-    /* FIX: was 170px hardcoded — mobile topbar(32) + navbar(auto ~120) + bottom-nav(56) */
-    height: calc(100dvh - 208px);
-    overflow: hidden;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
-  /* Product pages: /men/shirts */
+  .category-layout.root-page .content-wrapper {
+    height: auto;
+    max-height: none;
+    padding: 6px 8px;
+    overflow: visible;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Product pages on mobile: Natural scroll */
   .category-layout.sub-page {
     height: auto;
-    min-height: calc(100dvh - 208px);
+    min-height: calc(100dvh - 108px);
     overflow: visible;
+  }
+
+  .category-layout.sub-page .content-wrapper {
+    padding-top: 20px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .sidebar-wrapper {
     width: 100%;
   }
 
-  .content-wrapper {
-    padding: 0;
-    position: static;
-  }
-
   .offers-wrapper-desktop {
-    position: absolute;
-    top: 48%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     width: 100%;
+    height: 100%;
+    max-height: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
     z-index: 2;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .products-grid > * {
@@ -97,17 +145,7 @@
   }
 
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
-  }
-}
-@media (max-width: 768px) {
-  .category-layout.sub-page .content-wrapper {
-    padding-top: 20px;
-  }
-}
-@media (max-width: 768px) {
-  .category-layout.root-page .sidebar-wrapper {
-    padding-top: 22px;
   }
 }

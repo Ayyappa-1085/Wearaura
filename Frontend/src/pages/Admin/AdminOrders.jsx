@@ -68,6 +68,21 @@ function AdminOrders() {
     });
   };
 
+  const getAmounts = (order) => {
+    const subtotal = Number(order.subtotal ?? order.totalAmount ?? 0);
+    const discountAmount = Number(order.discountAmount ?? 0);
+    const finalAmount = Number(
+      order.finalAmount ?? order.totalAmount ?? subtotal,
+    );
+
+    return {
+      subtotal,
+      discountAmount,
+      finalAmount,
+      couponCode: order.couponCode || null,
+    };
+  };
+
   if (loading) {
     return (
       <div className="orders-page">
@@ -95,7 +110,9 @@ function AdminOrders() {
                   <th>ID</th>
                   <th>Customer</th>
                   <th>Items</th>
-                  <th>Total</th>
+                  <th>Subtotal</th>
+                  <th>Discount</th>
+                  <th>Final</th>
                   <th>Payment</th>
                   <th>Date / Time</th>
                   <th>Status</th>
@@ -103,7 +120,10 @@ function AdminOrders() {
               </thead>
 
               <tbody>
-                {orders.map((order) => (
+                {orders.map((order) => {
+                  const amounts = getAmounts(order);
+
+                  return (
                   <tr key={order._id}>
                     <td>{order.orderId || order._id}</td>
 
@@ -116,7 +136,14 @@ function AdminOrders() {
 
                     <td>{order.items?.length || 0}</td>
 
-                    <td>₹{Math.round(order.totalAmount || 0)}</td>
+                    <td>₹{Math.round(amounts.subtotal)}</td>
+
+                    <td>
+                      ₹{Math.round(amounts.discountAmount)}
+                      {amounts.couponCode ? ` (${amounts.couponCode})` : ""}
+                    </td>
+
+                    <td>₹{Math.round(amounts.finalAmount)}</td>
 
                     <td>{order.paymentMethod}</td>
 
@@ -142,13 +169,17 @@ function AdminOrders() {
                       </select>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <div className="mobile-orders">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const amounts = getAmounts(order);
+
+              return (
               <div className="order-card" key={order._id}>
                 <div className="card-head">
                   <h3>{order.orderId || order._id}</h3>
@@ -162,7 +193,14 @@ function AdminOrders() {
 
                 <p>Items: {order.items?.length || 0}</p>
 
-                <p>Total: ₹{Math.round(order.totalAmount || 0)}</p>
+                <p>Subtotal: ₹{Math.round(amounts.subtotal)}</p>
+
+                <p>
+                  Discount{amounts.couponCode ? ` (${amounts.couponCode})` : ""}: -₹
+                  {Math.round(amounts.discountAmount)}
+                </p>
+
+                <p>Final: ₹{Math.round(amounts.finalAmount)}</p>
 
                 <p>Payment: {order.paymentMethod}</p>
 
@@ -182,7 +220,8 @@ function AdminOrders() {
                   <option>Cancelled</option>
                 </select>
               </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

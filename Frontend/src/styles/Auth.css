@@ -19,10 +19,14 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4);
 
   overflow-y: auto;
 
   animation: overlayFade 0.18s ease-out;
+  animation: veloraFadeIn var(--motion-normal) var(--motion-ease-out) both;
   will-change: opacity;
 }
 
@@ -36,15 +40,18 @@
   border-radius: 16px;
 
   background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.98);
   color: #111;
 
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
 
   display: flex;
   flex-direction: column;
   gap: 16px;
 
   animation: authPopup 0.22s ease-out;
+  animation: veloraModalEnter var(--motion-normal) var(--motion-ease-emphasized) both;
   will-change: transform, opacity;
 }
 
@@ -81,12 +88,16 @@
   background: #fafafa;
 
   transition: 0.2s;
+  transition: border-color var(--motion-fast) ease,
+              background-color var(--motion-fast) ease,
+              box-shadow var(--motion-fast) ease;
 }
 
 .auth-box input:focus {
   border: 1px solid #000;
   background: #fff;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
 /* ================= PASSWORD FIELD ================= */
@@ -108,6 +119,11 @@
 
   color: #000;
   font-size: 15px;
+  transition: transform var(--motion-fast) ease, opacity var(--motion-fast) ease;
+}
+
+.eye-icon:active {
+  transform: translateY(-50%) scale(0.9);
 }
 
 /* ================= BUTTON ================= */
@@ -122,10 +138,17 @@
   cursor: pointer;
 
   transition: 0.2s;
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              background-color var(--motion-fast) ease;
 }
 
 .auth-box button:hover {
   background: #222;
+  transform: translateY(-1.5px);
+}
+
+.auth-box button:active {
+  transform: scale(0.985);
 }
 
 /* ================= TEXT ================= */

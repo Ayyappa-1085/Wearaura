@@ -75,10 +75,17 @@
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.18s ease;
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              background var(--motion-fast) ease;
 }
 
 .account-card button:hover {
   transform: translateY(-2px);
+  background: #222;
+}
+
+.account-card button:active {
+  transform: scale(0.985);
 }
 
 .logout-btn {
@@ -98,6 +105,14 @@
   margin: 14px 0;
   border-radius: 12px;
   border: 1px solid #ddd;
+  outline: none;
+  transition: border-color var(--motion-fast) ease,
+              box-shadow var(--motion-fast) ease;
+}
+
+.track-input:focus {
+  border-color: #111;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
 .track-result {

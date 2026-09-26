@@ -31,8 +31,13 @@ function ProductImage({ product, priority = false }) {
       <button
         type="button"
         className={`wishlist-icon ${isLiked ? "active" : ""}`}
+        aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
         aria-pressed={isLiked}
         onClick={() => toggleWishlist(product)}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleWishlist(product);
+        }}
       >
         {isLiked ? <FaHeart /> : <FaRegHeart />}
       </button>

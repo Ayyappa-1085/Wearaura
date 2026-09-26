@@ -8,6 +8,12 @@
 .search-icon {
   font-size: 20px;
   cursor: pointer;
+  transition: transform var(--motion-fast) var(--motion-ease-out),
+              color var(--motion-fast) ease;
+}
+
+.search-icon:active {
+  transform: scale(0.92);
 }
 
 /* Input Field */
@@ -19,7 +25,14 @@
   border-radius: 20px;
   outline: none;
   transition: all 0.3s ease;
+  transition: width var(--motion-normal) var(--motion-ease-out),
+              opacity var(--motion-normal) var(--motion-ease-out),
+              border-color var(--motion-fast) ease;
   height: 32px;
+}
+
+.search-input:focus {
+  border-color: #111;
 }
 
 /* When visible */

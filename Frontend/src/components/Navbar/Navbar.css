@@ -326,6 +326,9 @@ body {
 /* ================= MOBILE ================= */
 @media (max-width: 768px) {
   .footer {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 20px 20px 80px;
   }
 
@@ -490,6 +493,8 @@ body {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(0, 0, 0, 0.06);
   z-index: 2000;
+  animation: veloraDropdownEnter var(--motion-normal) var(--motion-ease-out) both;
+  transform-origin: top left;
 }
 
 .sort-menu div {
@@ -498,10 +503,16 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: background 0.18s ease;
+  transition: background var(--motion-fast) ease,
+              transform var(--motion-fast) ease;
 }
 
 .sort-menu div:hover {
   background: #f4f4f4;
+}
+
+.sort-menu div:active {
+  transform: scale(0.985);
 }
 
 @media (max-width: 768px) {
@@ -510,6 +521,8 @@ body {
     transform: translateX(-50%);
     top: 42px;
     min-width: 200px;
+    animation-name: veloraDropdownEnterMobile;
+    transform-origin: top center;
   }
 }
 /* ADD THIS AT VERY BOTTOM OF YOUR CSS FILE */

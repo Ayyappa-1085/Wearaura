@@ -94,7 +94,10 @@ function Navbar() {
       }
 
       setShowFilterSort(
-        isProductBrowsePage && (isSubCategory || productCategories.includes(currentCategory)) && scrollTop > 80 && !showSearch,
+        isProductBrowsePage &&
+          (isSubCategory || productCategories.includes(currentCategory)) &&
+          scrollTop > 80 &&
+          !showSearch,
       );
 
       lastScrollY.current = scrollTop;
@@ -113,7 +116,13 @@ function Navbar() {
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isSubCategory, showSearch, isAuthPage, isProductBrowsePage, currentCategory]);
+  }, [
+    isSubCategory,
+    showSearch,
+    isAuthPage,
+    isProductBrowsePage,
+    currentCategory,
+  ]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -176,8 +185,11 @@ function Navbar() {
         setShowSearch={setShowSearch}
         navigate={navigate}
         location={location}
-        onMenuClick={() => window.dispatchEvent(new Event("wearaura:toggle-mobile-sidebar"))}
+        onMenuClick={() =>
+          window.dispatchEvent(new Event("wearaura:toggle-mobile-sidebar"))
+        }
         showMenuButton={false}
+        showMenuButton={true}
       />
     </>
   );

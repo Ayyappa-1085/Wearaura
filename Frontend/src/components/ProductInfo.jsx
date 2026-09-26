@@ -51,7 +51,8 @@ function ProductInfo({ product, isWishlist = false }) {
         {/* 🔥 disable icon when out */}
         <span
           className={`plus-icon ${allOut ? "disabled" : ""}`}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (!allOut) {
               setShowSizes(!showSizes);
             }
@@ -73,7 +74,7 @@ function ProductInfo({ product, isWishlist = false }) {
 
       {/* ✅ SIZE PICKER */}
       {showSizes && !allOut && (
-        <div className="size-picker">
+        <div className="size-picker" onClick={(e) => e.stopPropagation()}>
           {sizes.map((size) => {
             const stock = sizeStock[size];
             const isOut = stock === 0;
@@ -83,7 +84,10 @@ function ProductInfo({ product, isWishlist = false }) {
                 key={size}
                 disabled={isOut}
                 className={`size-btn ${isOut ? "disabled-size" : ""}`}
-                onClick={() => handleSelectSize(size)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectSize(size);
+                }}
               >
                 {size}
 

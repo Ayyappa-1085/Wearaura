@@ -1,17 +1,57 @@
 /* ================= CARD ================= */
 .product-card {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --card-lift: 0px;
+  --card-scale: 1;
   width: 100%;
   background: #fff;
   cursor: pointer;
-  transition: transform 0.25s ease;
+  perspective: 1000px;
+  transform: perspective(1000px) translateY(var(--card-lift)) scale(var(--card-scale)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transform-style: preserve-3d;
+  transition: transform 0.38s cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 0.38s cubic-bezier(0.2, 0, 0, 1);
   content-visibility: auto;
   contain-intrinsic-size: 520px 480px;
+  will-change: transform;
 }
 
-/* subtle lift */
-.product-card:hover {
-  transform: translateY(-4px);
+/* Fast, responsive tracking when actively tilting */
+.product-card.is-tilting {
+  transition: transform 0.08s ease-out,
+              box-shadow 0.38s cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* subtle lift & scale combined with 3D tilt */
+.product-card:hover {
+  --card-lift: -4px;
+  --card-scale: 1.015;
+  box-shadow: var(--shadow-card-hover, 0 12px 28px rgba(0, 0, 0, 0.09));
+}
+
+.product-card:active {
+  --card-scale: 0.985;
+  --card-lift: -2px;
+}
+
+.product-card:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 4px;
+}
+
+/* Staggered entrance for product cards in category & search grids */
+.products-grid > .product-card {
+  animation: veloraCardEnter var(--motion-normal) var(--motion-ease-out) both;
+}
+.products-grid > .product-card:nth-child(1) { animation-delay: 0ms; }
+.products-grid > .product-card:nth-child(2) { animation-delay: 35ms; }
+.products-grid > .product-card:nth-child(3) { animation-delay: 70ms; }
+.products-grid > .product-card:nth-child(4) { animation-delay: 105ms; }
+.products-grid > .product-card:nth-child(5) { animation-delay: 140ms; }
+.products-grid > .product-card:nth-child(6) { animation-delay: 175ms; }
+.products-grid > .product-card:nth-child(7) { animation-delay: 210ms; }
+.products-grid > .product-card:nth-child(8) { animation-delay: 245ms; }
 
 /* ================= IMAGE ================= */
 .card-img {
@@ -30,11 +70,13 @@
   display: block; /* ✅ VERY IMPORTANT FIX */
 
   transition: transform 0.4s ease;
+  transition: transform 0.45s var(--motion-ease-out);
 }
 
 /* hover zoom */
 .product-card:hover .card-img img {
   transform: scale(1.05);
+  transform: scale(1.045);
 }
 
 /* ================= ❤️ HEART ================= */
@@ -50,6 +92,8 @@
   place-items: center;
   background: rgba(255, 255, 255, 0.94);
   cursor: pointer;
+  transform: translateZ(12px);
+  z-index: 5;
   transition: transform 0.2s ease;
 }
 
@@ -63,7 +107,7 @@
 }
 
 .wishlist-icon:hover {
-  transform: scale(1.15);
+  transform: translateZ(12px) scale(1.15);
 }
 
 /* ================= INFO ================= */
@@ -130,23 +174,33 @@
   color: #999;
   text-decoration: line-through;
 }
-.product-card {
-  transition:
-    transform 0.28s ease,
-    box-shadow 0.28s ease;
-}
 
-.product-card:hover {
-  transform: translateY(-4px);
-}
 /* ================= MOBILE ================= */
 @media (max-width: 768px) {
   .card-img {
+    max-width: 100%;
     height: 260px;
   }
 
   .card-info {
+    min-width: 0;
+    max-width: 100%;
     padding: 10px;
+  }
+
+  .title-row {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .card-info h4 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .plus-icon {
+    flex-shrink: 0;
   }
 
   .wishlist-icon svg {
@@ -199,4 +253,33 @@
   color: red;
   font-weight: 700;
   margin-top: 6px;
+}
+
+/* ================= TOUCH & REDUCED MOTION ================= */
+/* Skip 3D tilt on touch devices / coarse pointers */
+@media (hover: none) or (pointer: coarse) {
+  .product-card {
+    --tilt-x: 0deg !important;
+    --tilt-y: 0deg !important;
+    perspective: none !important;
+    transform: translateY(var(--card-lift)) scale(var(--card-scale)) !important;
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .product-card {
+    --tilt-x: 0deg !important;
+    --tilt-y: 0deg !important;
+    --card-scale: 1 !important;
+    --card-lift: 0px !important;
+    perspective: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .product-card:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-card-hover, 0 12px 28px rgba(0, 0, 0, 0.09));
+  }
 }

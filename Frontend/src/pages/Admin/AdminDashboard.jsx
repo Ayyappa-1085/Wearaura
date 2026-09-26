@@ -27,6 +27,9 @@ function AdminDashboard() {
     loadStats();
   }, []);
 
+  const getFinalAmount = (order) =>
+    Number(order.finalAmount ?? order.totalAmount ?? order.subtotal ?? 0);
+
   const loadStats = async () => {
     try {
       // ❌ REMOVE token logic
@@ -50,7 +53,7 @@ function AdminDashboard() {
       // 💰 REVENUE
       const revenue = allOrders
         .filter((o) => ["Confirmed", "Shipped", "Delivered"].includes(o.status))
-        .reduce((sum, item) => sum + Number(item.totalAmount || 0), 0);
+        .reduce((sum, item) => sum + getFinalAmount(item), 0);
 
       // 🔥 LOW STOCK
       const lowStock = products.filter((p) => {
@@ -166,8 +169,17 @@ function AdminDashboard() {
                 <strong>Status:</strong> {foundOrder.status}
               </p>
               <p>
-                <strong>Total:</strong> ₹
-                {Math.round(foundOrder.totalAmount || 0)}
+                <strong>Subtotal:</strong> ₹
+                {Math.round(foundOrder.subtotal ?? foundOrder.totalAmount ?? 0)}
+              </p>
+              <p>
+                <strong>Discount:</strong> ₹
+                {Math.round(foundOrder.discountAmount ?? 0)}
+                {foundOrder.couponCode ? ` (${foundOrder.couponCode})` : ""}
+              </p>
+              <p>
+                <strong>Final:</strong> ₹
+                {Math.round(getFinalAmount(foundOrder))}
               </p>
 
               <p>

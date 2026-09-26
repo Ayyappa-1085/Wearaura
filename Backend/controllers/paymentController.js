@@ -1,6 +1,6 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
-const Product = require("../models/Product");
+const { calculateOrderPricing } = require("../utils/orderPricing");
 
 // 🔥 INIT RAZORPAY
 const razorpay = new Razorpay({
@@ -11,7 +11,14 @@ const razorpay = new Razorpay({
 /* ================= CREATE PAYMENT ORDER ================= */
 exports.createPaymentOrder = async (req, res) => {
   try {
-    const { items = [], discount = 0, shippingCost = 0, totalAmount } = req.body;
+    console.log("createPaymentOrder couponCode:", req.body.couponCode);
+
+    const {
+      items = [],
+      couponCode = null,
+      shippingMethod = "standard",
+      taxAmount = 0,
+    } = req.body;
 
     if (!items.length) {
       return res.status(400).json({
@@ -19,38 +26,22 @@ exports.createPaymentOrder = async (req, res) => {
       });
     }
 
-    /* 🔥 CALCULATE AMOUNT ON BACKEND (DO NOT TRUST FRONTEND) */
-    let baseAmount = 0;
+    const pricing = await calculateOrderPricing({
+      items,
+      couponCode,
+      shippingMethod,
+      taxAmount,
+    });
 
-    for (const item of items) {
-      const product = await Product.findById(item.productId || item.product);
-
-      if (!product) {
-        return res.status(404).json({
-          message: "Product not found",
-        });
-      }
-
-      const qty = item.qty || item.quantity;
-
-      baseAmount += product.price * qty;
-    }
-
-    const safeDiscount = Math.max(0, Number(discount) || 0);
-    const safeShipping = Math.max(0, Number(shippingCost) || 0);
-    const payableAmount = Math.max(
-      0,
-      Math.round(
-        (Number(totalAmount) || baseAmount - safeDiscount + safeShipping) * 100,
-      ),
-    );
+    console.log("createPaymentOrder pricing:", pricing);
 
     const options = {
-      amount: payableAmount,
+      amount: pricing.finalAmount * 100,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
         userId: req.user?.id || "guest",
+        couponCode: pricing.couponCode || "",
       },
     };
 
@@ -59,7 +50,9 @@ exports.createPaymentOrder = async (req, res) => {
     res.json({
       success: true,
       order,
-      amount: payableAmount / 100,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      amount: pricing.finalAmount,
+      pricing,
     });
   } catch (error) {
     console.error("CREATE ORDER ERROR:", error);

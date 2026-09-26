@@ -43,10 +43,26 @@ body {
   object-fit: cover;
   object-position: top center;
   transition: transform 0.5s ease;
+  transition: transform 0.6s var(--motion-ease-out);
 }
 
 .section:hover img {
   transform: scale(1.05);
+  transform: scale(1.04);
+}
+
+/* Staggered entrance for homepage editorial sections */
+.section.men {
+  animation: veloraCardEnter var(--motion-slow) var(--motion-ease-out) both;
+}
+.section.women {
+  animation: veloraCardEnter var(--motion-slow) var(--motion-ease-out) 60ms both;
+}
+.kids {
+  animation: veloraCardEnter var(--motion-slow) var(--motion-ease-out) 120ms both;
+}
+.footwear {
+  animation: veloraCardEnter var(--motion-slow) var(--motion-ease-out) 180ms both;
 }
 
 /* ================= OVERLAY ================= */
@@ -60,6 +76,11 @@ body {
   letter-spacing: 2px;
   z-index: 2;
   line-height: normal;
+  transition: transform var(--motion-normal) var(--motion-ease-out);
+}
+
+.section:hover .overlay {
+  transform: translateY(-3px);
 }
 
 /* ================= DARK OVERLAY ================= */
@@ -99,11 +120,13 @@ body {
   object-fit: cover;
   object-position: top center;
   transition: transform 0.5s ease;
+  transition: transform 0.6s var(--motion-ease-out);
 }
 
 .kids:hover img,
 .footwear:hover img {
   transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 /* ================= FOOTER ================= */

@@ -71,7 +71,7 @@ function Payment() {
 
         if (stock === 0) {
           toast.error(
-            `${item.product?.title || "Item"} (${item.size}) is out of stock`
+            `${item.product?.title || "Item"} (${item.size}) is out of stock``${item.product?.title || "Item"} (${item.size}) is out of stock`,
           );
           return false;
         }
@@ -151,10 +151,11 @@ function Payment() {
           .join(", "),
         paymentMethod: "ONLINE",
         status: "Placed",
-        totalAmount: data.total || 0,
         items: formattedItems,
         idempotencyKey,
         paymentInfo: paymentDetails,
+        couponCode: data.couponCode || data.coupon?.code || null,
+        shippingMethod: data.shippingMethod || data.shipping || "standard",
       };
 
       const res = await api.post(API, payload);
@@ -180,7 +181,7 @@ function Payment() {
       toast.error(
         error?.response?.data?.message ||
           error.message ||
-          "Order failed. Try again."
+          "Order failed. Try again.",
       );
     } finally {
       setLoading(false);
@@ -203,23 +204,38 @@ function Payment() {
 
       const formattedItems = getFormattedItems(); // ✅ NEW
 
-      // 🔥 FIXED HERE (IMPORTANT)
-      const res = await api.post("/api/payment/create-order", {
+      const paymentRequestBody = {
         items: formattedItems,
-        discount: data.discount || 0,
-        shippingCost: data.shippingCost || 0,
-        totalAmount: data.total || 0,
-      });
+        couponCode: data.couponCode || data.coupon?.code || null,
+        shippingMethod: data.shippingMethod || data.shipping || "standard",
+      };
 
-      const order = res.data.order;
+      console.log("Payment create-order request body:", paymentRequestBody);
+
+      const res = await api.post(
+        "/api/payment/create-order",
+        paymentRequestBody,
+      );
+
+      const razorpayOrder = res.data?.order;
+
+      if (!razorpayOrder?.amount || !razorpayOrder?.id) {
+        throw new Error("Invalid Razorpay order response");
+      }
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY,
-        amount: order.amount,
+        amount: razorpayOrder.amount,
         currency: "INR",
         name: "WearAura",
         description: "Order Payment",
-        order_id: order.id,
+        order_id: razorpayOrder.id,
+
+        prefill: {
+          name: data.addressData?.name || "Customer",
+          email: data.addressData?.email || "customer@example.com",
+          contact: data.addressData?.mobile || "9999999999",
+        },
 
         handler: async function (response) {
           if (isProcessing) return;
@@ -263,7 +279,17 @@ function Payment() {
         },
       };
 
+      console.log("Razorpay checkout options:", options);
+
       const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response) {
+        console.log(
+          "RAZORPAY FAILURE:",
+          JSON.stringify(response.error, null, 2),
+        );
+      });
+
       rzp.open();
     } catch (error) {
       console.log("RAZORPAY ERROR:", error);
@@ -284,7 +310,7 @@ function Payment() {
         <div className="payment-box">
           <div className="payment-row">
             <span>Order Total</span>
-            <strong>₹{data.total || 0}</strong>
+            <strong>₹{data.finalAmount || data.total || 0}</strong>
           </div>
 
           <div className="payment-row">
@@ -294,7 +320,10 @@ function Payment() {
         </div>
 
         <div className="payment-actions">
-          <button onClick={() => navigate("/order-summary", { state: data })} disabled={loading}>
+          <button
+            onClick={() => navigate("/order-summary", { state: data })}
+            disabled={loading}
+          >
             Back to Summary
           </button>
 
@@ -303,7 +332,11 @@ function Payment() {
             onClick={handleRazorpayPayment}
             disabled={loading || !razorpayReady}
           >
-            {loading ? "Processing..." : razorpayReady ? "Pay Now" : "Loading Payment..."}
+            {loading
+              ? "Processing..."
+              : razorpayReady
+                ? "Pay Now"
+                : "Loading Payment..."}
           </button>
         </div>
       </div>

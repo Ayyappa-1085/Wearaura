@@ -53,13 +53,46 @@ const orderSchema = new mongoose.Schema(
       sparse: true,
     },
 
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
+
+    couponCode: {
+      type: String,
+      default: null,
+      trim: true,
+      uppercase: true,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    shippingFee: {
+      type: Number,
+      default: 0,
+    },
+
+    taxAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    finalAmount: {
+      type: Number,
+      default: 0,
+    },
+
     totalAmount: {
       type: Number,
-      required: true,
+      default: 0,
     },
 
     items: [
       {
+        productId: String,
         title: String,
         price: Number,
         qty: Number,

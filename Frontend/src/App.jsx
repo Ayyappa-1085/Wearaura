@@ -21,6 +21,8 @@ import AdminRevenue from "./pages/Admin/AdminRevenue";
 import AdminStock from "./pages/Admin/AdminStock";
 import AdminCancelled from "./pages/Admin/AdminCancelled";
 
+import ProductDetail from "./pages/ProductDetail/ProductDetail";
+
 // 🔥 ONLY THIS (REMOVE AdminRoute)
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -62,6 +64,7 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/:category" element={<CategoryLayout />} />
           <Route path="/:category/:item" element={<CategoryLayout />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
 
           <Route
             path="/account/profile"

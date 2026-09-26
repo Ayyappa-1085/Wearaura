@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 function SidebarSection() {
   return (
     <div className="sidebar-wrapper">
-      <Sidebar />
+      <Sidebar embedded={true} />
     </div>
   );
 }

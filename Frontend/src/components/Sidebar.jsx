@@ -1,9 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  FaTshirt,
+  FaFemale,
+  FaChild,
+  FaShoePrints,
+  FaArrowLeft,
+  FaChevronDown,
+  FaTimes,
+} from "react-icons/fa";
 import "./Sidebar.css";
 import { CATEGORY_ITEMS, CATEGORY_META } from "../data/categories";
 
-const Sidebar = () => {
+const CATEGORY_ICONS = {
+  men: FaTshirt,
+  women: FaFemale,
+  kids: FaChild,
+  footwear: FaShoePrints,
+};
+
+function Sidebar({ mobileOnly = false, embedded = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { category, item } = useParams();
@@ -11,15 +27,37 @@ const Sidebar = () => {
   const normalizedCategory = category?.toLowerCase();
   const currentMeta = CATEGORY_META[normalizedCategory];
 
-  const [expandedCategory, setExpandedCategory] = useState(normalizedCategory || "");
+  const [expandedCategory, setExpandedCategory] = useState(
+    normalizedCategory || "",
+  );
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= 768,
+  );
+
+  // Active indicator positioning
+  const [activeIndicatorStyle, setActiveIndicatorStyle] = useState({
+    top: 0,
+    height: 0,
+    opacity: 0,
+  });
+
+  const navContainerRef = useRef(null);
+  const itemRefs = useRef({});
   const shouldIgnoreNextPathClose = useRef(false);
 
-  // Desktop keeps its original route-driven behavior: the expanded/active
-  // category mirrors the URL. On mobile, the drawer is a self-contained UI
-  // surface — it must NOT be overwritten by route changes while the user is
-  // browsing inside it (this was the source of Bug 3).
+  // Responsive listener
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Sync expanded category with route on desktop
   useEffect(() => {
     if (isMobile) return;
 
@@ -30,8 +68,13 @@ const Sidebar = () => {
     }
   }, [normalizedCategory, isMobile]);
 
+  // Handle openMobileSidebar route state
   useEffect(() => {
-    if (!isMobile || !normalizedCategory || !location.state?.openMobileSidebar) {
+    if (
+      !isMobile ||
+      !normalizedCategory ||
+      !location.state?.openMobileSidebar
+    ) {
       return;
     }
 
@@ -40,14 +83,7 @@ const Sidebar = () => {
     setIsMobileOpen(true);
   }, [isMobile, normalizedCategory, location.state?.openMobileSidebar]);
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
+  // Global event listeners for mobile drawer
   useEffect(() => {
     const openDrawer = (event) => {
       const targetCategory = event?.detail?.category;
@@ -57,6 +93,7 @@ const Sidebar = () => {
       shouldIgnoreNextPathClose.current = true;
       setIsMobileOpen(true);
     };
+
     const closeDrawer = () => setIsMobileOpen(false);
     const toggleDrawer = () => setIsMobileOpen((prev) => !prev);
 
@@ -67,10 +104,14 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener("wearaura:open-mobile-sidebar", openDrawer);
       window.removeEventListener("wearaura:close-mobile-sidebar", closeDrawer);
-      window.removeEventListener("wearaura:toggle-mobile-sidebar", toggleDrawer);
+      window.removeEventListener(
+        "wearaura:toggle-mobile-sidebar",
+        toggleDrawer,
+      );
     };
   }, []);
 
+  // Close drawer on path change unless explicitly bypassed
   useEffect(() => {
     if (shouldIgnoreNextPathClose.current) {
       shouldIgnoreNextPathClose.current = false;
@@ -80,6 +121,7 @@ const Sidebar = () => {
     setIsMobileOpen(false);
   }, [location.pathname, location.search]);
 
+  // Mobile body scroll locking
   useEffect(() => {
     if (!isMobile || !isMobileOpen) {
       document.documentElement.style.overflow = "";
@@ -96,169 +138,249 @@ const Sidebar = () => {
     };
   }, [isMobile, isMobileOpen]);
 
-  const topLevelCategories = useMemo(
-    () =>
-      Object.entries(CATEGORY_META).map(([key, meta]) => ({
+  // Define top level navigation list
+  const navItems = useMemo(() => {
+    return [
+      ...Object.entries(CATEGORY_META).map(([key, meta]) => ({
         key,
         label: meta.label,
+        path: `/${key}`,
+        icon: CATEGORY_ICONS[key] || FaTshirt,
+        isCategory: true,
       })),
-    [],
-  );
+    ];
+  }, []);
 
-  // On mobile the sidebar is a global drawer that can open over ANY page
-  // (Home, Orders, etc.), so it must not depend on being on a category
-  // route. Desktop keeps its original behavior of only rendering as an
-  // embedded panel on category pages.
-  if (!isMobile && !currentMeta) return null;
+  // Determine currently active nav item key
+  const currentActiveKey = useMemo(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.startsWith("/men")) return "men";
+    if (path.startsWith("/women")) return "women";
+    if (path.startsWith("/kids")) return "kids";
+    if (path.startsWith("/footwear")) return "footwear";
+    return "";
+  }, [location.pathname]);
 
+  // Recalculate sliding active indicator position
+  useEffect(() => {
+    const updateActiveIndicator = () => {
+      if (!currentActiveKey || !navContainerRef.current) {
+        setActiveIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+        return;
+      }
+
+      const activeEl = itemRefs.current[currentActiveKey];
+      if (activeEl) {
+        const containerRect = navContainerRef.current.getBoundingClientRect();
+        const activeRect = activeEl.getBoundingClientRect();
+
+        setActiveIndicatorStyle({
+          top:
+            activeRect.top -
+            containerRect.top +
+            navContainerRef.current.scrollTop,
+          height: activeRect.height,
+          opacity: 1,
+        });
+      } else {
+        setActiveIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+      }
+    };
+
+    const rafId = requestAnimationFrame(updateActiveIndicator);
+    return () => cancelAnimationFrame(rafId);
+  }, [currentActiveKey, expandedCategory, isMobile, isMobileOpen]);
+
+  // Architecture guards against duplicate instances (placed AFTER all hooks):
+  if (mobileOnly && !isMobile) return null;
+  if (embedded && isMobile) return null;
+  if (embedded && !isMobile && !currentMeta) return null;
+
+  // Drawer handlers
   const closeDrawer = () => setIsMobileOpen(false);
 
-  // NOTE: This handler is intentionally wired to onClick ONLY (see JSX below).
-  // `click` is the terminal event in the touch-to-mouse compatibility sequence
-  // (touchstart -> touchend -> mousemove -> mousedown -> mouseup -> click).
-  // By only reacting here, the drawer-close + navigation state change happens
-  // strictly AFTER the entire tap gesture has been fully dispatched, so there
-  // is no leftover event left in the queue that can be re-hit-tested against
-  // newly-mounted Home page content underneath. No setTimeout is needed
-  // because there is no longer a race to defer past.
-  const handleCloseWithoutSelection = (event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
+  const handleBackdropClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     closeDrawer();
+  };
+
+  const handleNavClick = (navItem) => {
     if (isMobile) {
-      navigate("/");
-    }
-  };
-
-  const handleBackdropInteraction = (event) => {
-    handleCloseWithoutSelection(event);
-  };
-
-  const toggleCategory = (key) => {
-    if (expandedCategory === key) {
-      setExpandedCategory("");
+      if (expandedCategory === navItem.key) {
+        setExpandedCategory("");
+      } else {
+        setExpandedCategory(navItem.key);
+      }
       return;
     }
 
-    setExpandedCategory(key);
+    // Desktop
+    if (expandedCategory === navItem.key) {
+      setExpandedCategory((prev) => (prev ? "" : navItem.key));
+    } else {
+      setExpandedCategory(navItem.key);
+      navigate(`/${navItem.key}`);
+    }
   };
 
-  // Selecting a top-level category (Men/Women/Kids/Footwear) only ever
-  // changes what the sidebar is showing. It is never a navigation event —
-  // the URL should not change until the user picks a final submenu item.
-  const handleCategorySelect = (key) => {
-    if (isMobile) {
-      toggleCategory(key);
-      return;
-    }
-
-    // Desktop: unchanged original behavior (embedded nav follows the route).
-    if (normalizedCategory === key) {
-      toggleCategory(key);
-      return;
-    }
-
-    setExpandedCategory(key);
+  const handleSubCategoryClick = (catKey, sub) => {
     closeDrawer();
-    navigate(`/${key}`);
+    navigate(`/${catKey}/${sub}`);
   };
 
-  // The only place routing actually happens: the user picked a final
-  // destination. Always build the path from the category the sidebar has
-  // expanded, never from the current route.
-  const handleSubCategorySelect = (sub) => {
+  // Back to Home handler
+  const handleBackToHome = () => {
     closeDrawer();
-    navigate(`/${expandedCategory}/${sub}`);
+    navigate("/");
   };
 
   return (
     <>
+      {/* Mobile Backdrop Scrim */}
       {isMobile && (
-        <button
-          type="button"
-          className={`sidebar-overlay ${isMobileOpen ? "open" : ""}`}
-          onClick={handleBackdropInteraction}
-          aria-label="Close categories"
+        <div
+          className={`sidebar-backdrop ${isMobileOpen ? "open" : ""}`}
+          onClick={handleBackdropClick}
+          aria-hidden={!isMobileOpen}
         />
       )}
 
+      {/* Sidebar Aside */}
       <aside
-        className={`sidebar ${isMobile ? "mobile-drawer" : ""} ${isMobile && isMobileOpen ? "open" : ""}`}
-        onMouseDown={(event) => event.stopPropagation()}
-        onTouchStart={(event) => event.stopPropagation()}
-        onTouchEnd={(event) => event.stopPropagation()}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
+        className={`velora-sidebar ${isMobile ? "mobile-drawer" : "desktop-panel"} ${
+          isMobile && isMobileOpen ? "drawer-open" : ""
+        } ${!isMobile ? "expanded" : ""}`}
+        aria-label="Sidebar navigation"
       >
-        <div className="sidebar-header">
-          <div className="sidebar-header-top">
-            <div>
-              <p className="sidebar-eyebrow">Shop</p>
-              <h3>Categories</h3>
-            </div>
-
-            {isMobile && (
-              <button
-                type="button"
-                className="sidebar-close-btn"
-                onClick={handleCloseWithoutSelection}
-                aria-label="Close categories"
-              >
-                ×
-              </button>
-            )}
+        {/* Mobile Close Button */}
+        {isMobile && (
+          <div className="sidebar-top" style={{ "--item-idx": 0 }}>
+            <button
+              type="button"
+              className="drawer-close-btn"
+              onClick={closeDrawer}
+              aria-label="Close menu"
+            >
+              <FaTimes />
+            </button>
           </div>
+        )}
+
+        {/* ================= MIDDLE: PRIMARY NAVIGATION ================= */}
+        <div className="sidebar-middle">
+          <div className="sidebar-heading">
+            <span className="sidebar-eyebrow">Shop</span>
+            <h2>Categories</h2>
+          </div>
+
+          <nav
+            className="sidebar-nav-list"
+            ref={navContainerRef}
+            aria-label="Primary Categories"
+          >
+            {/* Animated Sliding Active Indicator */}
+            <div
+              className="sidebar-active-pill"
+              style={{
+                transform: `translateY(${activeIndicatorStyle.top}px)`,
+                height: `${activeIndicatorStyle.height}px`,
+                opacity: activeIndicatorStyle.opacity,
+              }}
+              aria-hidden="true"
+            />
+
+            {navItems.map((nav, idx) => {
+              const IconComponent = nav.icon;
+              const isActive = currentActiveKey === nav.key;
+              const isExpanded = expandedCategory === nav.key;
+              const subItems = CATEGORY_ITEMS[nav.key] || [];
+
+              return (
+                <div
+                  key={nav.key}
+                  className={`nav-item-wrapper ${isExpanded ? "has-expanded" : ""}`}
+                  style={{ "--item-idx": idx + 1 }}
+                >
+                  <button
+                    ref={(el) => (itemRefs.current[nav.key] = el)}
+                    type="button"
+                    className={`nav-item-trigger ${isActive ? "active" : ""}`}
+                    onClick={() => handleNavClick(nav)}
+                    aria-expanded={nav.isCategory ? isExpanded : undefined}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <span className="nav-icon-box">
+                      <IconComponent className="nav-icon" />
+                    </span>
+
+                    <span className="nav-item-label">{nav.label}</span>
+
+                    {nav.isCategory && (
+                      <span className={`nav-arrow ${isExpanded ? "open" : ""}`}>
+                        <FaChevronDown />
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Subcategories Accordion */}
+                  {nav.isCategory && (
+                    <div
+                      className={`nav-accordion-panel ${isExpanded ? "expanded" : ""}`}
+                      aria-hidden={!isExpanded}
+                    >
+                      <div className="accordion-inner">
+                        {subItems.map((sub) => {
+                          const isSubSelected =
+                            normalizedCategory === nav.key && item === sub;
+                          return (
+                            <button
+                              key={sub}
+                              type="button"
+                              className={`sub-item-link ${
+                                isSubSelected ? "selected" : ""
+                              }`}
+                              onClick={() =>
+                                handleSubCategoryClick(nav.key, sub)
+                              }
+                            >
+                              <span className="sub-indicator" />
+                              <span className="sub-text">
+                                {sub.charAt(0).toUpperCase() + sub.slice(1)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Category navigation">
-          {topLevelCategories.map((group) => {
-            const isExpanded = expandedCategory === group.key;
-            const isActive = expandedCategory === group.key;
+        {/* ================= BOTTOM: BACK TO HOME ================= */}
+        <div
+          className="sidebar-bottom"
+          style={{ "--item-idx": navItems.length + 1 }}
+        >
+          <button
+            type="button"
+            className="sidebar-back-btn"
+            onClick={handleBackToHome}
+            aria-label="Back to Home"
+          >
+            <span className="nav-icon-box">
+              <FaArrowLeft className="back-btn-icon" />
+            </span>
 
-            return (
-              <div className="sidebar-group" key={group.key}>
-                <button
-                  type="button"
-                  className={`group-trigger ${isActive ? "active" : ""}`}
-                  onClick={() => handleCategorySelect(group.key)}
-                >
-                  <span className="group-title">{group.label}</span>
-                  <span className={`group-arrow ${isExpanded ? "open" : ""}`}>
-                    ▾
-                  </span>
-                </button>
-
-                <div
-                  className={`group-panel ${isExpanded ? "open" : ""}`}
-                  aria-hidden={!isExpanded}
-                >
-                  {CATEGORY_ITEMS[group.key].map((sub) => (
-                    <button
-                      key={sub}
-                      type="button"
-                      className={`group-item ${
-                        normalizedCategory === group.key && item === sub ? "selected" : ""
-                      }`}
-                      onClick={() => handleSubCategorySelect(sub)}
-                    >
-                      {sub.charAt(0).toUpperCase() + sub.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-
-        <button className="back-btn" onClick={handleCloseWithoutSelection}>
-          ← Back to Home
-        </button>
+            <span className="back-btn-label">Back to Home</span>
+          </button>
+        </div>
       </aside>
     </>
   );
-};
+}
 
 export default Sidebar;
