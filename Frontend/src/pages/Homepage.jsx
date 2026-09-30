@@ -2,10 +2,10 @@ import "./Homepage.css";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import menImg from "../assets/men.png";
-import womenImg from "../assets/women.png";
-import kidsImg from "../assets/kids.png";
-import footwearImg from "../assets/footware.png";
+import menImg from "../assets/men.webp";
+import womenImg from "../assets/women.webp";
+import kidsImg from "../assets/kids.webp";
+import footwearImg from "../assets/footwear.webp";
 
 function Homepage() {
   const navigate = useNavigate();
@@ -36,7 +36,10 @@ function Homepage() {
           <div className="overlay">MEN</div>
         </div>
 
-        <div className="section women" onClick={() => handleCategoryClick("women")}>
+        <div
+          className="section women"
+          onClick={() => handleCategoryClick("women")}
+        >
           <img
             src={womenImg}
             alt="Women"
@@ -47,7 +50,10 @@ function Homepage() {
         </div>
 
         <div className="right-section">
-          <div className="section kids" onClick={() => handleCategoryClick("kids")}>
+          <div
+            className="section kids"
+            onClick={() => handleCategoryClick("kids")}
+          >
             <img
               src={kidsImg}
               alt="Kids"
